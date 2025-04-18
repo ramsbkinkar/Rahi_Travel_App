@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				raahi: {
+					blue: {
+						light: '#D3E4FD',
+						DEFAULT: '#0EA5E9',
+						dark: '#0284C7'
+					},
+					orange: {
+						light: '#FEC6A1',
+						DEFAULT: '#F97316',
+						dark: '#C2410C'
+					}
 				}
 			},
 			borderRadius: {
@@ -84,11 +97,40 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					from: { 
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					to: { 
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'page-flip': {
+					'0%': {
+						transform: 'rotateY(0deg)',
+						boxShadow: '0 5px 15px rgba(0,0,0,0.05)'
+					},
+					'50%': {
+						transform: 'rotateY(-180deg)',
+						boxShadow: '-5px 5px 15px rgba(0,0,0,0.1)'
+					},
+					'100%': {
+						transform: 'rotateY(-360deg)',
+						boxShadow: '0 5px 15px rgba(0,0,0,0.05)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out forwards',
+				'page-flip': 'page-flip 1.5s ease-in-out'
+			},
+			backgroundImage: {
+				'hero-pattern': "url('https://images.unsplash.com/photo-1469041797191-50ace28483c3?q=80&w=1974')"
 			}
 		}
 	},
