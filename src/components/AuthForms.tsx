@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from "@/components/ui/use-toast";
 
 interface AuthFormsProps {
   onSuccess?: () => void;
@@ -45,10 +46,15 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onSuccess }) => {
       const user = await signIn(loginEmail, loginPassword);
       if (user) {
         await refresh();
+        toast({
+          title: "Login successful",
+          description: "Welcome back to Raahi!",
+        });
         onSuccess?.();
       }
-    } catch (error) {
-      setLoginError("Failed to sign in. Please check your credentials and try again.");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setLoginError(error.message || "Failed to sign in. Please check your credentials and try again.");
     } finally {
       setLoading(false);
     }
@@ -76,13 +82,23 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onSuccess }) => {
     setLoading(true);
     
     try {
+      console.log("Attempting registration with:", { email: registerEmail, password: registerPassword, name: registerName });
       const user = await signUp(registerEmail, registerPassword, registerName);
+      console.log("Registration result:", user);
+      
       if (user) {
         await refresh();
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created. Welcome to Raahi!",
+        });
         onSuccess?.();
+      } else {
+        throw new Error("Registration failed. Please try again.");
       }
-    } catch (error) {
-      setRegisterError("Failed to sign up. Please try again.");
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      setRegisterError(error.message || "Failed to sign up. Please try again.");
     } finally {
       setLoading(false);
     }

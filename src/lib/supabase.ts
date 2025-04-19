@@ -51,12 +51,13 @@ export const signIn = async (email: string, password: string) => {
     
     return data.user;
   } catch (error: any) {
+    console.error('Error signing in:', error);
     toast({
       title: 'Error signing in',
       description: error.message,
       variant: 'destructive'
     });
-    return null;
+    throw error;
   }
 };
 
@@ -64,12 +65,18 @@ export const signUp = async (email: string, password: string, name: string) => {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          name: name
+        }
+      }
     });
     
     if (error) throw error;
     
     if (data.user) {
+      console.log("User created successfully, creating profile:", data.user);
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -79,22 +86,26 @@ export const signUp = async (email: string, password: string, name: string) => {
           created_at: new Date().toISOString()
         });
         
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        throw profileError;
+      }
     }
     
     toast({
       title: 'Account created!',
-      description: 'Please check your email for verification.'
+      description: 'Your account has been successfully created.'
     });
     
     return data.user;
   } catch (error: any) {
+    console.error('Error signing up:', error);
     toast({
       title: 'Error signing up',
       description: error.message,
       variant: 'destructive'
     });
-    return null;
+    throw error;
   }
 };
 

@@ -21,18 +21,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const loadUser = async () => {
-    setLoading(true);
-    const userData = await getCurrentUser();
-    setUser(userData);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const userData = await getCurrentUser();
+      setUser(userData);
+    } catch (error) {
+      console.error("Error loading user:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadUser();
+    // First check for an existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        loadUser();
+      } else {
+        setLoading(false);
+      }
+    });
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async () => {
-      await loadUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      loadUser();
     });
 
     return () => {
