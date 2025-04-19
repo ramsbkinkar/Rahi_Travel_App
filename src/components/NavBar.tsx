@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const NavBar = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const { user, logout } = useAuth();
   const { toast } = useToast();
 
@@ -50,6 +51,11 @@ const NavBar = () => {
     }
   };
 
+  const openAuth = (isSigningUp: boolean) => {
+    setIsSignUp(isSigningUp);
+    setIsAuthOpen(true);
+  };
+
   return (
     <nav className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +83,7 @@ const NavBar = () => {
           </div>
 
           {/* Auth Buttons */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -96,22 +102,34 @@ const NavBar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Sheet open={isAuthOpen} onOpenChange={setIsAuthOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="default">Sign In</Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Welcome to Raahi</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-4">
-                    <LoginSignup
-                      isOpen={isAuthOpen}
-                      onClose={() => setIsAuthOpen(false)}
-                    />
+              <>
+                <Sheet open={isAuthOpen} onOpenChange={setIsAuthOpen}>
+                  <div className="flex items-center space-x-2">
+                    <SheetTrigger asChild>
+                      <Button variant="outline" onClick={() => openAuth(false)}>
+                        Sign In
+                      </Button>
+                    </SheetTrigger>
+                    <SheetTrigger asChild>
+                      <Button variant="default" onClick={() => openAuth(true)}>
+                        Sign Up
+                      </Button>
+                    </SheetTrigger>
                   </div>
-                </SheetContent>
-              </Sheet>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Welcome to Raahi</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <LoginSignup
+                        isOpen={isAuthOpen}
+                        onClose={() => setIsAuthOpen(false)}
+                        defaultIsSignUp={isSignUp}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </>
             )}
 
             {/* Mobile Navigation */}

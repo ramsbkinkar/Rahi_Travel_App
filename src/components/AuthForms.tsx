@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,13 +7,18 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthFormsProps {
   onSuccess: () => void;
+  defaultIsSignUp?: boolean;
 }
 
-const AuthForms = ({ onSuccess }: AuthFormsProps) => {
-  const [isLogin, setIsLogin] = useState(true);
+const AuthForms = ({ onSuccess, defaultIsSignUp = false }: AuthFormsProps) => {
+  const [isLogin, setIsLogin] = useState(!defaultIsSignUp);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { login, signup } = useAuth();
+
+  useEffect(() => {
+    setIsLogin(!defaultIsSignUp);
+  }, [defaultIsSignUp]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
