@@ -1,274 +1,99 @@
-
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { signIn, signUp } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from "@/components/ui/use-toast";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api-client';
 
 interface AuthFormsProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
-const AuthForms: React.FC<AuthFormsProps> = ({ onSuccess }) => {
-  const { refresh } = useAuth();
-  const [activeTab, setActiveTab] = useState("login");
+const AuthForms = ({ onSuccess }: AuthFormsProps) => {
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  
-  // Register state
-  const [registerName, setRegisterName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
-  
-  // Error states
-  const [loginError, setLoginError] = useState("");
-  const [registerError, setRegisterError] = useState("");
-  
-  const handleLogin = async (e: React.FormEvent) => {
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoginError("");
-    
-    if (!loginEmail || !loginPassword) {
-      setLoginError("Please fill in all fields");
-      return;
-    }
-    
     setLoading(true);
-    
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      const user = await signIn(loginEmail, loginPassword);
-      if (user) {
-        await refresh();
+      if (isLogin) {
+        await apiClient.signIn(email, password);
         toast({
-          title: "Login successful",
-          description: "Welcome back to Raahi!",
+          title: "Welcome back!",
+          description: "You've successfully logged in.",
         });
-        onSuccess?.();
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      setLoginError(error.message || "Failed to sign in. Please check your credentials and try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegisterError("");
-    
-    if (!registerName || !registerEmail || !registerPassword || !registerConfirmPassword) {
-      setRegisterError("Please fill in all fields");
-      return;
-    }
-    
-    if (registerPassword !== registerConfirmPassword) {
-      setRegisterError("Passwords do not match");
-      return;
-    }
-    
-    if (registerPassword.length < 6) {
-      setRegisterError("Password must be at least 6 characters");
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      console.log("Attempting registration with:", { email: registerEmail, password: registerPassword, name: registerName });
-      const user = await signUp(registerEmail, registerPassword, registerName);
-      console.log("Registration result:", user);
-      
-      if (user) {
-        await refresh();
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created. Welcome to Raahi!",
-        });
-        onSuccess?.();
       } else {
-        throw new Error("Registration failed. Please try again.");
+        const name = formData.get('name') as string;
+        await apiClient.signUp(name, email, password);
+        toast({
+          title: "Account created!",
+          description: "You've successfully signed up.",
+        });
       }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      setRegisterError(error.message || "Failed to sign up. Please try again.");
+      onSuccess();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Authentication failed",
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="login">Login</TabsTrigger>
-        <TabsTrigger value="register">Register</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="login">
-        <form onSubmit={handleLogin} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="login-email">Email</Label>
-            <Input 
-              id="login-email"
-              type="email"
-              placeholder="john@example.com"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="login-password">Password</Label>
-              <button 
-                type="button"
-                onClick={() => setActiveTab("forgot-password")}
-                className="text-xs text-raahi-blue hover:underline"
-              >
-                Forgot Password?
-              </button>
-            </div>
-            <Input 
-              id="login-password"
-              type="password"
-              placeholder="••••••••"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              required
-            />
-          </div>
-          
-          {loginError && (
-            <div className="text-sm text-red-500">{loginError}</div>
-          )}
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-raahi-blue hover:bg-raahi-blue-dark"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
-          
-          <div className="text-center text-sm">
-            Don't have an account?{" "}
-            <button 
-              type="button"
-              onClick={() => setActiveTab("register")}
-              className="text-raahi-blue hover:underline"
-            >
-              Sign up
-            </button>
-          </div>
-        </form>
-      </TabsContent>
-      
-      <TabsContent value="register">
-        <form onSubmit={handleRegister} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="register-name">Full Name</Label>
-            <Input 
-              id="register-name"
-              type="text"
-              placeholder="John Doe"
-              value={registerName}
-              onChange={(e) => setRegisterName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="register-email">Email</Label>
-            <Input 
-              id="register-email"
-              type="email"
-              placeholder="john@example.com"
-              value={registerEmail}
-              onChange={(e) => setRegisterEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="register-password">Password</Label>
-            <Input 
-              id="register-password"
-              type="password"
-              placeholder="••••••••"
-              value={registerPassword}
-              onChange={(e) => setRegisterPassword(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="register-confirm-password">Confirm Password</Label>
-            <Input 
-              id="register-confirm-password"
-              type="password"
-              placeholder="••••••••"
-              value={registerConfirmPassword}
-              onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          
-          {registerError && (
-            <div className="text-sm text-red-500">{registerError}</div>
-          )}
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-raahi-blue hover:bg-raahi-blue-dark"
-            disabled={loading}
-          >
-            {loading ? "Creating Account..." : "Create Account"}
-          </Button>
-          
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <button 
-              type="button"
-              onClick={() => setActiveTab("login")}
-              className="text-raahi-blue hover:underline"
-            >
-              Sign in
-            </button>
-          </div>
-        </form>
-      </TabsContent>
-      
-      <TabsContent value="forgot-password">
-        <div className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="reset-email">Email</Label>
-            <Input id="reset-email" type="email" placeholder="john@example.com" />
-          </div>
-          
-          <Button className="w-full bg-raahi-blue hover:bg-raahi-blue-dark">
-            Send Reset Link
-          </Button>
-          
-          <div className="text-center text-sm">
-            <button 
-              type="button"
-              onClick={() => setActiveTab("login")}
-              className="text-raahi-blue hover:underline"
-            >
-              Back to Sign In
-            </button>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4 w-full">
+      {!isLogin && (
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            name="name"
+            placeholder="Enter your name"
+            required={!isLogin}
+          />
         </div>
-      </TabsContent>
-    </Tabs>
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        className="w-full"
+        onClick={() => setIsLogin(!isLogin)}
+      >
+        {isLogin ? "Need an account? Sign Up" : "Already have an account? Login"}
+      </Button>
+    </form>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -7,27 +6,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin, Calendar, Clock, Home, Building, Utensils, Bus, Phone, Heart } from "lucide-react";
-import { getCityDetails } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 const CityDetails = () => {
   const { citySlug } = useParams();
-  const [city, setCity] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    const fetchCityDetails = async () => {
-      if (citySlug) {
-        setLoading(true);
-        const cityData = await getCityDetails(citySlug);
-        setCity(cityData);
-        setLoading(false);
-      }
-    };
-    
-    fetchCityDetails();
-  }, [citySlug]);
+  const { data: city, isLoading } = useQuery({
+    queryKey: ['city', citySlug],
+    queryFn: () => apiClient.getCityDetails(citySlug || ''),
+    enabled: !!citySlug
+  });
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-10 flex justify-center items-center min-h-[70vh]">
         <Loader2 className="w-8 h-8 animate-spin text-raahi-blue" />
@@ -61,15 +52,15 @@ const CityDetails = () => {
     <div className="container mx-auto py-6 px-4 md:px-6">
       <Breadcrumb className="mb-6">
         <BreadcrumbItem>
-          <BreadcrumbLink as={Link} to="/">Home</BreadcrumbLink>
+          <Link to="/" className="text-sm font-medium hover:text-primary">Home</Link>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink as={Link} to="/explore-india">Explore India</BreadcrumbLink>
+          <Link to="/explore-india" className="text-sm font-medium hover:text-primary">Explore India</Link>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink>{city.name}</BreadcrumbLink>
+          <span className="text-sm font-medium">{city.name}</span>
         </BreadcrumbItem>
       </Breadcrumb>
       

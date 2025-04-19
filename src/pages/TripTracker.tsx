@@ -7,22 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import TravelCard from '@/components/TravelCard';
-import { getTravelPackages } from '@/lib/supabase';
+import { apiClient } from '@/lib/api-client';
 import { Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface SupabasePackage {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string;
-  duration: string | null;
-  price: number;
-  image_url: string | null;
-  category: string | null;
-  created_at: string | null;
-}
 
 interface TravelPackage {
   id: string;
@@ -40,7 +28,7 @@ const TripTracker: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentCategory, setCurrentCategory] = useState('all');
 
-  // Sample travel packages data (fallback data while loading from Supabase)
+  // Sample travel packages data (fallback data while loading from API)
   const samplePackages: TravelPackage[] = [
     {
       id: "1",
@@ -71,19 +59,19 @@ const TripTracker: React.FC = () => {
     }
   ];
   
-  const { data: supabasePackages = [], isLoading: isLoadingPackages } = useQuery<SupabasePackage[]>({
+  const { data: packages = [], isLoading: isLoadingPackages } = useQuery({
     queryKey: ['travelPackages', currentCategory],
-    queryFn: () => getTravelPackages(currentCategory),
+    queryFn: () => apiClient.getPackages({ category: currentCategory !== 'all' ? currentCategory : undefined }),
   });
 
-  // Transform Supabase data to match our TravelPackage interface
-  const travelPackages: TravelPackage[] = isLoadingPackages ? samplePackages : supabasePackages.map(pkg => ({
+  // Transform API data to match our TravelPackage interface
+  const travelPackages: TravelPackage[] = isLoadingPackages ? samplePackages : packages.map(pkg => ({
     id: pkg.id,
     title: pkg.title,
     location: pkg.location,
-    duration: pkg.duration || "Duration not specified",
+    duration: pkg.duration_days ? `${pkg.duration_days} Days` : "Duration not specified",
     price: `₹${pkg.price.toLocaleString()}`,
-    image_url: pkg.image_url || "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
+    image_url: pkg.images?.[0] || "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
     category: pkg.category || "All"
   }));
 
