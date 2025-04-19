@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import TravelCard from '@/components/TravelCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const packages = [
   {
@@ -52,6 +55,21 @@ const packages = [
 ];
 
 const TravelPackages: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentCategory, setCurrentCategory] = useState('all');
+
+  const filterPackages = (search: string, category: string) => {
+    return packages.filter(pkg => {
+      const matchesSearch = 
+        pkg.title.toLowerCase().includes(search.toLowerCase()) || 
+        pkg.location.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = category === 'all' || pkg.category === category;
+      return matchesSearch && matchesCategory;
+    });
+  };
+
+  const filteredPackages = filterPackages(searchTerm, currentCategory);
+
   return (
     <div className="min-h-screen">
       <NavBar />
@@ -70,23 +88,90 @@ const TravelPackages: React.FC = () => {
         </div>
       </section>
       
-      {/* Packages Grid */}
+      {/* Search & Filter */}
+      <section className="py-8 border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search packages by name or location..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Packages Section */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {packages.map((pkg) => (
-              <TravelCard 
-                key={pkg.id} 
-                image={pkg.image_url} 
-                title={pkg.title} 
-                location={pkg.location} 
-                duration={pkg.duration} 
-                price={pkg.price}
-                category={pkg.category} 
-                id={pkg.id}
-              />
-            ))}
-          </div>
+          <Tabs defaultValue="all" onValueChange={setCurrentCategory}>
+            <TabsList className="mb-8 flex flex-wrap justify-center gap-2">
+              <TabsTrigger 
+                value="all"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                All Packages
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Honeymoon"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                Honeymoon
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Adventure"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                Adventure
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Spiritual"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                Spiritual
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Friends"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                Friends
+              </TabsTrigger>
+              <TabsTrigger 
+                value="Family"
+                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+              >
+                Family
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={currentCategory}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredPackages.map((pkg) => (
+                  <TravelCard 
+                    key={pkg.id} 
+                    image={pkg.image_url} 
+                    title={pkg.title} 
+                    location={pkg.location} 
+                    duration={pkg.duration} 
+                    price={pkg.price}
+                    category={pkg.category} 
+                    id={pkg.id}
+                  />
+                ))}
+              </div>
+              
+              {filteredPackages.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">No packages found matching your search.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
       
