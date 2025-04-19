@@ -1,12 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials');
-}
+export const supabase = supabaseClient;
 
 export type UserSession = {
   id: string;
@@ -15,16 +11,12 @@ export type UserSession = {
   avatar_url?: string;
 };
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Authentication Helpers
 export const getCurrentUser = async (): Promise<UserSession | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) return null;
     
-    // Get profile data from profiles table
     const { data: profile } = await supabase
       .from('profiles')
       .select('name, avatar_url')
@@ -77,7 +69,6 @@ export const signUp = async (email: string, password: string, name: string) => {
     
     if (error) throw error;
     
-    // Create a profile record
     if (data.user) {
       const { error: profileError } = await supabase
         .from('profiles')
@@ -127,7 +118,6 @@ export const signOut = async () => {
   }
 };
 
-// Data Fetching Helpers
 export const getTravelPackages = async (category = 'all') => {
   try {
     let query = supabase.from('travel_packages').select('*');
@@ -176,10 +166,8 @@ export const getCityDetails = async (slug: string) => {
   }
 };
 
-// Enhanced Social Posts Functions
 export const createSocialPost = async (userId: string, caption: string, location: string, tags: string[], image: File) => {
   try {
-    // First upload the image
     const fileExt = image.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     const filePath = `social/${fileName}`;
@@ -227,7 +215,6 @@ export const createSocialPost = async (userId: string, caption: string, location
   }
 };
 
-// Enhanced Scrapbook Functions
 export const createScrapbook = async (userId: string, title: string, theme: string) => {
   try {
     const { data, error } = await supabase
@@ -262,7 +249,6 @@ export const createScrapbook = async (userId: string, title: string, theme: stri
 
 export const createScrapbookPage = async (scrapbookId: string, content: any, pageNumber: number) => {
   try {
-    // If content includes images, upload them first
     if (content.images?.length) {
       const uploadPromises = content.images.map(async (image: File) => {
         const fileExt = image.name.split('.').pop();
@@ -303,7 +289,6 @@ export const createScrapbookPage = async (scrapbookId: string, content: any, pag
   }
 };
 
-// Enhanced Trip Location Functions
 export const updateTripLocation = async (userId: string, latitude: number, longitude: number, cityName: string) => {
   try {
     const { error } = await supabase
@@ -335,10 +320,8 @@ export const updateTripLocation = async (userId: string, latitude: number, longi
   }
 };
 
-// Enhanced Social Post Likes Functions
 export const toggleLike = async (postId: string, userId: string) => {
   try {
-    // Check if already liked
     const { data: existingLike, error: checkError } = await supabase
       .from('post_likes')
       .select('*')
@@ -349,7 +332,6 @@ export const toggleLike = async (postId: string, userId: string) => {
     if (checkError) throw checkError;
     
     if (existingLike) {
-      // Unlike
       const { error: deleteError } = await supabase
         .from('post_likes')
         .delete()
@@ -359,9 +341,8 @@ export const toggleLike = async (postId: string, userId: string) => {
       if (deleteError) throw deleteError;
       
       await supabase.rpc('decrement_likes', { post_id: postId });
-      return false; // Unliked
+      return false;
     } else {
-      // Like
       const { error: insertError } = await supabase
         .from('post_likes')
         .insert({
@@ -373,7 +354,7 @@ export const toggleLike = async (postId: string, userId: string) => {
       if (insertError) throw insertError;
       
       await supabase.rpc('increment_likes', { post_id: postId });
-      return true; // Liked
+      return true;
     }
   } catch (error) {
     console.error('Error toggling like:', error);
@@ -381,7 +362,6 @@ export const toggleLike = async (postId: string, userId: string) => {
   }
 };
 
-// Realtime subscriptions
 export const subscribeToTrips = (onUpdate: (payload: any) => void) => {
   return supabase
     .channel('trip_locations')

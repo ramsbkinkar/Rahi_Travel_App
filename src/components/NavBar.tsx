@@ -1,14 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import LoginSignup from './LoginSignup';
+import { useAuth } from '@/contexts/AuthContext';
+import { signOut } from '@/lib/supabase';
 
 const NavBar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,13 +59,35 @@ const NavBar: React.FC = () => {
             </div>
             
             <div className="hidden md:flex">
-              <Button 
-                variant="ghost" 
-                className="text-raahi-blue hover:text-raahi-blue-dark hover:bg-raahi-blue-light/30"
-                onClick={() => setLoginModalOpen(true)}
-              >
-                Login / Signup
-              </Button>
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="h-10 w-10 cursor-pointer">
+                      <AvatarImage src={user?.avatar_url || ''} alt={user?.name || ''} />
+                      <AvatarFallback className="bg-raahi-blue text-white">
+                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem className="font-medium">
+                      {user?.name || user?.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  className="text-raahi-blue hover:text-raahi-blue-dark hover:bg-raahi-blue-light/30"
+                  onClick={() => setLoginModalOpen(true)}
+                >
+                  Login / Signup
+                </Button>
+              )}
             </div>
             
             <div className="md:hidden flex items-center">
@@ -122,16 +154,42 @@ const NavBar: React.FC = () => {
               >
                 FAQ
               </Link>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start px-3 text-raahi-blue hover:bg-raahi-blue-light/30"
-                onClick={() => {
-                  setIsOpen(false);
-                  setLoginModalOpen(true);
-                }}
-              >
-                Login / Signup
-              </Button>
+              
+              {isAuthenticated ? (
+                <div className="px-3 py-2">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.avatar_url || ''} />
+                      <AvatarFallback className="bg-raahi-blue text-white">
+                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{user?.name || user?.email}</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start px-3 text-red-500 hover:bg-red-50"
+                    onClick={() => {
+                      setIsOpen(false);
+                      signOut();
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start px-3 text-raahi-blue hover:bg-raahi-blue-light/30"
+                  onClick={() => {
+                    setIsOpen(false);
+                    setLoginModalOpen(true);
+                  }}
+                >
+                  Login / Signup
+                </Button>
+              )}
             </div>
           </div>
         )}
