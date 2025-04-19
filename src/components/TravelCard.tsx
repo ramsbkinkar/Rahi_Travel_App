@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface TravelCardProps {
   image: string;
@@ -11,6 +12,7 @@ interface TravelCardProps {
   duration: string;
   price: string;
   category: string;
+  id?: string;
 }
 
 const TravelCard: React.FC<TravelCardProps> = ({ 
@@ -19,7 +21,8 @@ const TravelCard: React.FC<TravelCardProps> = ({
   location, 
   duration, 
   price,
-  category
+  category,
+  id
 }) => {
   return (
     <Card className="overflow-hidden card-hover">
@@ -51,9 +54,12 @@ const TravelCard: React.FC<TravelCardProps> = ({
       </CardContent>
       
       <CardFooter className="border-t border-gray-100 pt-4">
-        <button className="text-raahi-blue hover:text-raahi-blue-dark font-medium text-sm w-full text-center transition">
+        <Link 
+          to={`/travel-packages/${id || 'detail'}`} 
+          className="text-raahi-blue hover:text-raahi-blue-dark font-medium text-sm w-full text-center transition"
+        >
           View Details
-        </button>
+        </Link>
       </CardFooter>
     </Card>
   );
