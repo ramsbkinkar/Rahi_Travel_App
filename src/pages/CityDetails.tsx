@@ -103,19 +103,6 @@ const CityDetails = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <div className="container mx-auto">
-            <Breadcrumb className="mb-4 text-white/80">
-              <BreadcrumbItem>
-                <Link to="/" className="hover:text-white transition-colors">Home</Link>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="text-white/60" />
-              <BreadcrumbItem>
-                <Link to="/explore-india" className="hover:text-white transition-colors">Explore India</Link>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="text-white/60" />
-              <BreadcrumbItem>
-                <span className="text-white">{city.name}</span>
-              </BreadcrumbItem>
-            </Breadcrumb>
             <h1 className="text-5xl font-bold text-white mb-2">{city.name}</h1>
             <div className="flex items-center text-white/90">
               <MapPin className="h-5 w-5 mr-2" />
@@ -163,7 +150,7 @@ const CityDetails = () => {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <div className="pl-8 text-gray-700">
+                      <div className="pl-8 text-gray-700 text-[15px] leading-relaxed">
                         {section.content}
                       </div>
                     </AccordionContent>
