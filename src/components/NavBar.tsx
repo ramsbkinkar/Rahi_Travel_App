@@ -27,7 +27,7 @@ const NavBar = () => {
 
   const navigationLinks = [
     { to: "/", label: "Home" },
-    { to: "/feed", label: "Feed" },
+    { to: "/social-feed", label: "Feed" },
     { to: "/travel-packages", label: "Travel Packages" },
     { to: "/explore-india", label: "Explore" },
     { to: "/scrapbook", label: "Scrapbook" },
