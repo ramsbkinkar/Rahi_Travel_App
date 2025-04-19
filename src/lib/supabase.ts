@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
@@ -177,6 +176,58 @@ export const getCityDetails = async (slug: string) => {
   }
 };
 
+// Enhanced Social Posts Functions
+export const createSocialPost = async (userId: string, caption: string, location: string, tags: string[], image: File) => {
+  try {
+    // First upload the image
+    const fileExt = image.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    const filePath = `social/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('raahi-images')
+      .upload(filePath, image);
+    
+    if (uploadError) throw uploadError;
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('raahi-images')
+      .getPublicUrl(filePath);
+    
+    const { data, error } = await supabase
+      .from('social_posts')
+      .insert({
+        user_id: userId,
+        caption,
+        location,
+        tags,
+        image_url: publicUrl,
+        created_at: new Date().toISOString(),
+        likes: 0
+      })
+      .select('*, profiles:user_id(*)')
+      .single();
+    
+    if (error) throw error;
+    
+    toast({
+      title: 'Post created!',
+      description: 'Your travel memory has been shared.'
+    });
+    
+    return data;
+  } catch (error: any) {
+    console.error('Error creating social post:', error);
+    toast({
+      title: 'Error creating post',
+      description: error.message,
+      variant: 'destructive'
+    });
+    return null;
+  }
+};
+
+// Enhanced Scrapbook Functions
 export const createScrapbook = async (userId: string, title: string, theme: string) => {
   try {
     const { data, error } = await supabase
@@ -191,31 +242,48 @@ export const createScrapbook = async (userId: string, title: string, theme: stri
       .single();
     
     if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating scrapbook:', error);
-    return null;
-  }
-};
-
-export const getUserScrapbooks = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('scrapbooks')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    toast({
+      title: 'Scrapbook created!',
+      description: 'You can now start adding pages to your scrapbook.'
+    });
+    
     return data;
-  } catch (error) {
-    console.error('Error fetching user scrapbooks:', error);
-    return [];
+  } catch (error: any) {
+    console.error('Error creating scrapbook:', error);
+    toast({
+      title: 'Error creating scrapbook',
+      description: error.message,
+      variant: 'destructive'
+    });
+    return null;
   }
 };
 
 export const createScrapbookPage = async (scrapbookId: string, content: any, pageNumber: number) => {
   try {
+    // If content includes images, upload them first
+    if (content.images?.length) {
+      const uploadPromises = content.images.map(async (image: File) => {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const filePath = `scrapbook/${fileName}`;
+        
+        await supabase.storage
+          .from('raahi-images')
+          .upload(filePath, image);
+          
+        const { data: { publicUrl } } = supabase.storage
+          .from('raahi-images')
+          .getPublicUrl(filePath);
+          
+        return publicUrl;
+      });
+      
+      const uploadedUrls = await Promise.all(uploadPromises);
+      content.images = uploadedUrls;
+    }
+    
     const { data, error } = await supabase
       .from('scrapbook_pages')
       .insert({
@@ -235,49 +303,40 @@ export const createScrapbookPage = async (scrapbookId: string, content: any, pag
   }
 };
 
-export const createSocialPost = async (userId: string, caption: string, location: string, tags: string[], imageUrl: string) => {
+// Enhanced Trip Location Functions
+export const updateTripLocation = async (userId: string, latitude: number, longitude: number, cityName: string) => {
   try {
-    const { data, error } = await supabase
-      .from('social_posts')
-      .insert({
+    const { error } = await supabase
+      .from('trip_locations')
+      .upsert({
         user_id: userId,
-        caption,
-        location,
-        tags,
-        image_url: imageUrl,
-        created_at: new Date().toISOString(),
-        likes: 0
-      })
-      .select()
-      .single();
+        latitude,
+        longitude,
+        city_name: cityName,
+        updated_at: new Date().toISOString()
+      });
     
     if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating social post:', error);
-    return null;
+    
+    toast({
+      title: 'Location updated',
+      description: `Your location in ${cityName} has been updated.`
+    });
+    
+    return true;
+  } catch (error: any) {
+    console.error('Error updating trip location:', error);
+    toast({
+      title: 'Error updating location',
+      description: error.message,
+      variant: 'destructive'
+    });
+    return false;
   }
 };
 
-export const getSocialPosts = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('social_posts')
-      .select(`
-        *,
-        profiles:user_id (name, avatar_url)
-      `)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching social posts:', error);
-    return [];
-  }
-};
-
-export const likePost = async (postId: string, userId: string) => {
+// Enhanced Social Post Likes Functions
+export const toggleLike = async (postId: string, userId: string) => {
   try {
     // Check if already liked
     const { data: existingLike, error: checkError } = await supabase
@@ -299,10 +358,7 @@ export const likePost = async (postId: string, userId: string) => {
       
       if (deleteError) throw deleteError;
       
-      // Decrement likes count
-      const { error: updateError } = await supabase.rpc('decrement_likes', { post_id: postId });
-      if (updateError) throw updateError;
-      
+      await supabase.rpc('decrement_likes', { post_id: postId });
       return false; // Unliked
     } else {
       // Like
@@ -316,75 +372,42 @@ export const likePost = async (postId: string, userId: string) => {
       
       if (insertError) throw insertError;
       
-      // Increment likes count
-      const { error: updateError } = await supabase.rpc('increment_likes', { post_id: postId });
-      if (updateError) throw updateError;
-      
+      await supabase.rpc('increment_likes', { post_id: postId });
       return true; // Liked
     }
   } catch (error) {
-    console.error('Error updating like:', error);
+    console.error('Error toggling like:', error);
     throw error;
   }
 };
 
-export const updateTripLocation = async (userId: string, latitude: number, longitude: number, cityName: string) => {
-  try {
-    const { error } = await supabase
-      .from('trip_locations')
-      .upsert({
-        user_id: userId,
-        latitude,
-        longitude,
-        city_name: cityName,
-        updated_at: new Date().toISOString()
-      });
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error updating trip location:', error);
-    return false;
-  }
+// Realtime subscriptions
+export const subscribeToTrips = (onUpdate: (payload: any) => void) => {
+  return supabase
+    .channel('trip_locations')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'trip_locations'
+      },
+      onUpdate
+    )
+    .subscribe();
 };
 
-export const getTripLocations = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('trip_locations')
-      .select(`
-        *,
-        profiles:user_id (name, avatar_url)
-      `)
-      .order('updated_at', { ascending: false });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching trip locations:', error);
-    return [];
-  }
-};
-
-export const uploadImage = async (file: File, folder: string) => {
-  try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${folder}/${fileName}`;
-    
-    const { error } = await supabase.storage
-      .from('raahi-images')
-      .upload(filePath, file);
-    
-    if (error) throw error;
-    
-    const { data: { publicUrl } } = supabase.storage
-      .from('raahi-images')
-      .getPublicUrl(filePath);
-    
-    return publicUrl;
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return null;
-  }
+export const subscribeToSocialPosts = (onUpdate: (payload: any) => void) => {
+  return supabase
+    .channel('social_posts')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'social_posts'
+      },
+      onUpdate
+    )
+    .subscribe();
 };
