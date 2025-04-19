@@ -162,27 +162,43 @@ export class ApiClient {
   }
 
   async getCityDetails(slug: string): Promise<City> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/cities/${slug}`, {
-        headers: {
-          ...this.defaultHeaders,
-          ...this.getAuthHeader(),
-        },
-        credentials: 'include',
-      });
+    // Mock data for testing
+    const mockCities: Record<string, City> = {
+      'delhi': {
+        id: 'delhi',
+        name: 'Delhi',
+        description: 'Delhi, India\'s capital territory, is a massive metropolitan area in the country\'s north. In Old Delhi, a neighborhood dating to the 1600s, stands the imposing Mughal-era Red Fort, a symbol of India, and the sprawling Jama Masjid mosque, whose courtyard accommodates 25,000 people.',
+        image_url: 'https://images.unsplash.com/photo-1587474260584-136574528ed5',
+        best_time_to_visit: 'October to March',
+        highlights: ['Red Fort', 'Qutub Minar', 'India Gate', 'Humayun\'s Tomb', 'Lotus Temple'],
+      },
+      'mumbai': {
+        id: 'mumbai',
+        name: 'Mumbai',
+        description: 'Mumbai (formerly called Bombay) is a densely populated city on India\'s west coast. A financial center, it\'s India\'s largest city. On the Mumbai Harbour waterfront stands the iconic Gateway of India stone arch, built in the early 20th century.',
+        image_url: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f',
+        best_time_to_visit: 'November to February',
+        highlights: ['Gateway of India', 'Marine Drive', 'Elephanta Caves', 'Colaba Causeway', 'Juhu Beach'],
+      },
+      'kolkata': {
+        id: 'kolkata',
+        name: 'Kolkata',
+        description: 'Kolkata (formerly Calcutta) is the capital of India\'s West Bengal state. Founded as an East India Company trading post, it was India\'s capital under the British Raj from 1773-1911. Today it\'s known for its grand colonial architecture, art galleries and cultural festivals.',
+        image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8AuReW6jMN1DH1PVjYlVEbzWDLUBW5EGLzQ&s',
+        best_time_to_visit: 'October to March',
+        highlights: ['Victoria Memorial', 'Howrah Bridge', 'Park Street', 'Indian Museum', 'Dakshineswar Kali Temple'],
+      },
+    };
 
-      return this.handleResponse<City>(response);
-    } catch (error) {
-      console.error('Error fetching city details:', error);
-      return {
-        id: slug,
-        name: 'City Not Found',
-        description: 'City information is currently unavailable.',
-        image_url: '/placeholder.svg',
-        best_time_to_visit: 'Information not available',
-        highlights: [],
-      };
-    }
+    // Return mock data if available, otherwise return default "not found" data
+    return mockCities[slug] || {
+      id: slug,
+      name: 'City Not Found',
+      description: 'City information is currently unavailable.',
+      image_url: '/placeholder.svg',
+      best_time_to_visit: 'Information not available',
+      highlights: [],
+    };
   }
 }
 
