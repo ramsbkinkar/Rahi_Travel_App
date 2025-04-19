@@ -56,7 +56,7 @@ const Index: React.FC = () => {
     {
       id: 3,
       name: "Varanasi",
-      image: "https://images.unsplash.com/photo-1561361058-c24e021e539f",
+      image: "https://s7ap1.scene7.com/is/image/incredibleindia/manikarnika-ghat-city-hero?qlt=82&ts=1727959374496",
       description: "Experience spiritual awakening in one of the oldest cities."
     }
   ];

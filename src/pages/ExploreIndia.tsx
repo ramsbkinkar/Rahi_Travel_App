@@ -32,7 +32,7 @@ const ExploreIndia: React.FC = () => {
       id: 3,
       name: "Kolkata",
       slug: "kolkata",
-      image: "https://images.unsplash.com/photo-1558818229-f9233abfb5ae",
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8AuReW6jMN1DH1PVjYlVEbzWDLUBW5EGLzQ&s",
       description: "The cultural capital of India known for its colonial architecture, art galleries, and literary heritage.",
       region: "East India"
     },
@@ -56,7 +56,7 @@ const ExploreIndia: React.FC = () => {
       id: 6,
       name: "Varanasi",
       slug: "varanasi",
-      image: "https://images.unsplash.com/photo-1561361058-c24e021e539f",
+      image: "https://s7ap1.scene7.com/is/image/incredibleindia/manikarnika-ghat-city-hero?qlt=82&ts=1727959374496",
       description: "One of the world's oldest continuously inhabited cities and a major spiritual center for Hinduism.",
       region: "North India"
     },
