@@ -1,16 +1,99 @@
-
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import TravelCard from '@/components/TravelCard';
+import { getTravelPackages } from '@/lib/supabase';
+import { Loader2, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface SupabasePackage {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string;
+  duration: string | null;
+  price: number;
+  image_url: string | null;
+  category: string | null;
+  created_at: string | null;
+}
+
+interface TravelPackage {
+  id: string;
+  title: string;
+  location: string;
+  duration: string;
+  price: string;
+  image_url: string;
+  category: string;
+}
 
 const TripTracker: React.FC = () => {
   const { toast } = useToast();
   const [showShareLink, setShowShareLink] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentCategory, setCurrentCategory] = useState('all');
+
+  // Sample travel packages data (fallback data while loading from Supabase)
+  const samplePackages: TravelPackage[] = [
+    {
+      id: "1",
+      image_url: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
+      title: "Serene Kashmir Voyage",
+      location: "Kashmir, India",
+      duration: "6 Days / 5 Nights",
+      price: "₹32,999",
+      category: "Honeymoon"
+    },
+    {
+      id: "2",
+      image_url: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb",
+      title: "Goa Beach Adventure",
+      location: "Goa, India",
+      duration: "4 Days / 3 Nights",
+      price: "₹18,499",
+      category: "Friends"
+    },
+    {
+      id: "3",
+      image_url: "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
+      title: "Rajasthan Heritage Tour",
+      location: "Rajasthan, India",
+      duration: "8 Days / 7 Nights",
+      price: "₹45,999",
+      category: "Family"
+    }
+  ];
   
+  const { data: supabasePackages = [], isLoading: isLoadingPackages } = useQuery<SupabasePackage[]>({
+    queryKey: ['travelPackages', currentCategory],
+    queryFn: () => getTravelPackages(currentCategory),
+  });
+
+  // Transform Supabase data to match our TravelPackage interface
+  const travelPackages: TravelPackage[] = isLoadingPackages ? samplePackages : supabasePackages.map(pkg => ({
+    id: pkg.id,
+    title: pkg.title,
+    location: pkg.location,
+    duration: pkg.duration || "Duration not specified",
+    price: `₹${pkg.price.toLocaleString()}`,
+    image_url: pkg.image_url || "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
+    category: pkg.category || "All"
+  }));
+
+  const filterPackages = (packages: TravelPackage[], search: string) => {
+    return packages.filter(pkg => 
+      pkg.title.toLowerCase().includes(search.toLowerCase()) || 
+      pkg.location.toLowerCase().includes(search.toLowerCase())
+    );
+  };
+
   const handleShare = () => {
     setShowShareLink(true);
     toast({
@@ -186,6 +269,82 @@ const TripTracker: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Travel Packages Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-6">Recommended Travel Packages</h2>
+          <p className="text-gray-600 mb-8">
+            Discover curated travel experiences perfect for your next adventure across India.
+          </p>
+
+          {/* Search & Filter */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search packages by name or location..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Tabs defaultValue="all" onValueChange={setCurrentCategory} className="w-full">
+              <TabsList className="mb-6 flex flex-wrap justify-start gap-2">
+                <TabsTrigger value="all">All Packages</TabsTrigger>
+                <TabsTrigger value="Honeymoon">Honeymoon</TabsTrigger>
+                <TabsTrigger value="Adventure">Adventure</TabsTrigger>
+                <TabsTrigger value="Spiritual">Spiritual</TabsTrigger>
+                <TabsTrigger value="Friends">Friends</TabsTrigger>
+                <TabsTrigger value="Family">Family</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={currentCategory}>
+                {isLoadingPackages ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-raahi-blue" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {filterPackages(travelPackages, searchTerm).map((pkg: TravelPackage) => (
+                      <TravelCard
+                        key={pkg.id}
+                        image={pkg.image_url}
+                        title={pkg.title}
+                        location={pkg.location}
+                        duration={pkg.duration}
+                        price={pkg.price}
+                        category={pkg.category}
+                        id={pkg.id}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {filterPackages(travelPackages, searchTerm).length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">No packages found matching your search.</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          <div className="mt-8 text-center">
+            <Button 
+              variant="outline" 
+              className="border-raahi-blue text-raahi-blue hover:bg-raahi-blue-light/30"
+              onClick={() => window.location.href = '/travel-packages'}
+            >
+              View All Packages
+            </Button>
           </div>
         </div>
       </section>
