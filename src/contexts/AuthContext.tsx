@@ -1,29 +1,75 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, apiClient } from '@/lib/api-client';
+import { apiClient } from '@/integration/api/client';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  isLoading: true,
+  isAuthenticated: false,
+  loading: true,
+  login: async () => {},
+  signup: async () => {},
+  logout: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for user in localStorage
-    const user = apiClient.getCurrentUser();
-    setUser(user);
-    setIsLoading(false);
+    // Check for auth token in localStorage
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    // TODO: Implement token verification with backend
+    setLoading(false);
   }, []);
 
+  const login = async (email: string, password: string) => {
+    const response = await apiClient.login(email, password);
+    if (response.data?.user) {
+      setUser(response.data.user);
+    }
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    const response = await apiClient.signup(name, email, password);
+    if (response.data?.user) {
+      setUser(response.data.user);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('authToken');
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!user,
+        loading,
+        login,
+        signup,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

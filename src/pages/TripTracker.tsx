@@ -81,7 +81,7 @@ const TripTracker: React.FC = () => {
       pkg.location.toLowerCase().includes(search.toLowerCase())
     );
   };
-
+  
   const handleShare = () => {
     setShowShareLink(true);
     toast({

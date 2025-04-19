@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthFormsProps {
   onSuccess: () => void;
@@ -13,6 +13,7 @@ const AuthForms = ({ onSuccess }: AuthFormsProps) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { login, signup } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,14 +25,14 @@ const AuthForms = ({ onSuccess }: AuthFormsProps) => {
 
     try {
       if (isLogin) {
-        await apiClient.signIn(email, password);
+        await login(email, password);
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
       } else {
         const name = formData.get('name') as string;
-        await apiClient.signUp(name, email, password);
+        await signup(name, email, password);
         toast({
           title: "Account created!",
           description: "You've successfully signed up.",
@@ -42,7 +43,7 @@ const AuthForms = ({ onSuccess }: AuthFormsProps) => {
       toast({
         variant: "destructive",
         title: "Authentication failed",
-        description: error instanceof Error ? error.message : "Please try again",
+        description: error instanceof Error ? error.message : "Server error",
       });
     } finally {
       setLoading(false);

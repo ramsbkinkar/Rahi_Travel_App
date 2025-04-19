@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
-import type { ApiResponse, LoginRequest, LoginResponse, TravelPackage, PackageFilters } from './types';
 
-const API_BASE_URL = 'http://192.168.31.185:3000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -21,7 +20,9 @@ axiosInstance.interceptors.response.use(
       // Clear token on authentication error
       localStorage.removeItem('authToken');
     }
-    return Promise.reject(error);
+    // Extract the error message from the response
+    const message = error.response?.data?.message || error.message || 'An error occurred';
+    return Promise.reject(new Error(message));
   }
 );
 
@@ -38,20 +39,43 @@ axiosInstance.interceptors.request.use(
 );
 
 interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
+  status: 'success' | 'error';
+  data?: {
+    user: {
+      id: number;
+      email: string;
+      name: string;
+    };
   };
+  message?: string;
 }
 
 class ApiClient {
+  async signup(name: string, email: string, password: string): Promise<AuthResponse> {
+    try {
+      const response: AxiosResponse<AuthResponse> = await axiosInstance.post('/auth/signup', {
+        name,
+        email,
+        password
+      });
+      if (response.data.status === 'success' && response.data.data?.user) {
+        localStorage.setItem('authToken', response.data.data.user.id.toString());
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Signup failed:', error);
+      throw error;
+    }
+  }
+
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
-      const response: AxiosResponse<AuthResponse> = await axiosInstance.post('/auth/login', { email, password });
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
+      const response: AxiosResponse<AuthResponse> = await axiosInstance.post('/auth/login', {
+        email,
+        password
+      });
+      if (response.data.status === 'success' && response.data.data?.user) {
+        localStorage.setItem('authToken', response.data.data.user.id.toString());
       }
       return response.data;
     } catch (error) {
@@ -60,37 +84,11 @@ class ApiClient {
     }
   }
 
-  async getPackages(filters?: PackageFilters): Promise<TravelPackage[]> {
-    try {
-      const response: AxiosResponse<TravelPackage[]> = await axiosInstance.get('/packages', { params: filters });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch packages:', error);
-      throw error;
-    }
-  }
-
-  async getPackageById(id: string): Promise<TravelPackage> {
-    try {
-      const response: AxiosResponse<TravelPackage> = await axiosInstance.get(`/packages/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to fetch package ${id}:`, error);
-      throw error;
-    }
-  }
-
-  async createPackage(packageData: Omit<TravelPackage, 'id' | 'created_at' | 'updated_at'>): Promise<TravelPackage> {
-    try {
-      const response: AxiosResponse<TravelPackage> = await axiosInstance.post('/packages', packageData);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to create package:', error);
-      throw error;
-    }
+  async logout(): Promise<void> {
+    localStorage.removeItem('authToken');
   }
 }
 
 // Export a singleton instance
 export const apiClient = new ApiClient();
-export default apiClient; 
+export default apiClient;
