@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import TripTracker from "./pages/TripTracker";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,41 +30,43 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Suspense fallback={<LoadingScreen />}>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/travel-packages" element={<TravelPackages />} />
-                <Route path="/explore-india" element={<ExploreIndia />} />
-                <Route path="/explore-india/:citySlug" element={<CityDetails />} />
-                <Route 
-                  path="/scrapbook" 
-                  element={
-                    <ProtectedRoute>
-                      <Scrapbook />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/social-feed" element={<SocialFeed />} />
-                <Route 
-                  path="/trip-tracker" 
-                  element={
-                    <ProtectedRoute>
-                      <TripTracker />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </Suspense>
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Suspense fallback={<LoadingScreen />}>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/travel-packages" element={<TravelPackages />} />
+                  <Route path="/explore-india" element={<ExploreIndia />} />
+                  <Route path="/explore-india/:citySlug" element={<CityDetails />} />
+                  <Route 
+                    path="/scrapbook" 
+                    element={
+                      <ProtectedRoute>
+                        <Scrapbook />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="/social-feed" element={<SocialFeed />} />
+                  <Route 
+                    path="/trip-tracker" 
+                    element={
+                      <ProtectedRoute>
+                        <TripTracker />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </Suspense>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
