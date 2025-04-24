@@ -138,8 +138,8 @@ const TripTracker: React.FC = () => {
     <div className="min-h-screen">
       <NavBar />
       
-      {/* Header Section */}
-      <section className="pt-28 pb-8">
+      {/* Hero Section */}
+      <section className="pt-28 pb-8 bg-[#E6F0FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl font-bold mb-6">Live Group Trip Tracker</h1>
@@ -167,26 +167,6 @@ const TripTracker: React.FC = () => {
                 Share Trip Link
               </Button>
             </div>
-            
-            {showShareLink && (
-              <div className="mt-4 p-3 bg-gray-50 border rounded-md flex items-center justify-between">
-                <span className="text-sm text-gray-600 truncate">
-                  https://raahi.travel/trip/TRIP123456
-                </span>
-                <button 
-                  className="text-primary text-sm font-medium hover:text-primary/90"
-                  onClick={() => {
-                    toast({
-                      title: "Link Copied Again!",
-                      description: "Trip tracking link has been copied to clipboard.",
-                      duration: 3000,
-                    });
-                  }}
-                >
-                  Copy
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </section>

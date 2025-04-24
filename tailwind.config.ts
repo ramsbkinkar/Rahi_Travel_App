@@ -26,7 +26,7 @@ export default {
 					orange: '#FF6B1B',
 					'blue-hover': '#00A3D8',
 					'orange-hover': '#E65A0F',
-					'blue-light': '#E6F7FD',
+					'blue-light': '#E6F0FF',
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

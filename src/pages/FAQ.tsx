@@ -52,7 +52,7 @@ const FAQ: React.FC = () => {
       <NavBar />
       
       {/* Header Section */}
-      <section className="pt-28 pb-16 bg-gradient-to-br from-raahi-blue-light to-white">
+      <section className="pt-28 pb-16 bg-[#E6F0FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">

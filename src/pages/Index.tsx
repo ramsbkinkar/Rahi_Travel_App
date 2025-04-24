@@ -220,14 +220,14 @@ const Index: React.FC = () => {
         </div>
       </section>
       
-      {/* Testimonials */}
-      <section className="py-16 bg-raahi-blue-light">
+      {/* Testimonials Section */}
+      <section className="py-16 bg-[#E6F0FF]">
         <div className="section-container">
           <h2 className="section-title">What Our Travelers Say</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white p-6 rounded-lg shadow-md">
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center mb-4">
                   <div className="mr-4">
                     <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
