@@ -148,7 +148,7 @@ const TripTracker: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
-                className="bg-raahi-blue hover:bg-raahi-blue-dark"
+                variant="default"
                 onClick={() => {
                   toast({
                     title: "Location Updated",
@@ -161,7 +161,7 @@ const TripTracker: React.FC = () => {
               </Button>
               <Button 
                 variant="outline" 
-                className="border-raahi-blue text-raahi-blue hover:bg-raahi-blue-light/30"
+                className="border-primary text-primary hover:bg-primary/10"
                 onClick={handleShare}
               >
                 Share Trip Link
@@ -174,7 +174,7 @@ const TripTracker: React.FC = () => {
                   https://raahi.travel/trip/TRIP123456
                 </span>
                 <button 
-                  className="text-raahi-blue text-sm font-medium"
+                  className="text-primary text-sm font-medium hover:text-primary/90"
                   onClick={() => {
                     toast({
                       title: "Link Copied Again!",

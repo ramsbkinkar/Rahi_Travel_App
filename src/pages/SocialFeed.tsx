@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
@@ -113,7 +112,7 @@ const SocialFeed: React.FC = () => {
               
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="bg-raahi-orange hover:bg-raahi-orange-dark">
+                  <Button variant="default">
                     <Upload size={16} className="mr-2" /> New Post
                   </Button>
                 </DialogTrigger>
@@ -164,7 +163,7 @@ const SocialFeed: React.FC = () => {
                     
                     <div>
                       <div className="flex items-center mb-2">
-                        <Hash size={16} className="text-raahi-blue mr-2" />
+                        <Hash size={16} className="text-primary mr-2" />
                         <span className="font-medium">Add Hashtags</span>
                       </div>
                       <Input placeholder="e.g., travel, india, wanderlust (comma separated)" />
@@ -181,7 +180,7 @@ const SocialFeed: React.FC = () => {
                   
                   <div className="flex justify-end mt-4">
                     <Button 
-                      className="bg-raahi-blue hover:bg-raahi-blue-dark"
+                      variant="default"
                       onClick={handlePostUpload}
                     >
                       Post
@@ -205,9 +204,9 @@ const SocialFeed: React.FC = () => {
                 <span className="text-gray-700 font-medium">Filter by:</span>
               </div>
               <div className="flex space-x-4">
-                <button className="text-raahi-blue font-medium">Latest</button>
-                <button className="text-gray-500 hover:text-raahi-blue">Popular</button>
-                <button className="text-gray-500 hover:text-raahi-blue">Following</button>
+                <button className="text-primary font-medium">Latest</button>
+                <button className="text-gray-500 hover:text-primary">Popular</button>
+                <button className="text-gray-500 hover:text-primary">Following</button>
               </div>
             </div>
             

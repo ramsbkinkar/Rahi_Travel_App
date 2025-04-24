@@ -110,40 +110,40 @@ const TravelPackages: React.FC = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <Tabs defaultValue="all" onValueChange={setCurrentCategory}>
-            <TabsList className="mb-8 flex flex-wrap justify-center gap-2">
+            <TabsList className="flex flex-wrap justify-start gap-2 mb-8">
               <TabsTrigger 
-                value="all"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="all" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 All Packages
               </TabsTrigger>
               <TabsTrigger 
-                value="Honeymoon"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="Honeymoon" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Honeymoon
               </TabsTrigger>
               <TabsTrigger 
-                value="Adventure"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="Adventure" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Adventure
               </TabsTrigger>
               <TabsTrigger 
-                value="Spiritual"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="Spiritual" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Spiritual
               </TabsTrigger>
               <TabsTrigger 
-                value="Friends"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="Friends" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Friends
               </TabsTrigger>
               <TabsTrigger 
-                value="Family"
-                className="px-6 py-2 rounded-full data-[state=active]:bg-raahi-blue data-[state=active]:text-white"
+                value="Family" 
+                className="px-6 py-2 rounded-full data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Family
               </TabsTrigger>

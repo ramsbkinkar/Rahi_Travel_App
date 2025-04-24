@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Book, Camera, Users } from 'lucide-react';
@@ -80,7 +79,7 @@ const Index: React.FC = () => {
               Your smart travel companion for creating unforgettable journeys across India.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-raahi-blue hover:bg-raahi-blue-dark text-white">
+              <Button size="lg" variant="default">
                 Explore Packages
               </Button>
               <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/20">
@@ -120,9 +119,9 @@ const Index: React.FC = () => {
         
         <div className="mt-12 text-center">
           <Link to="/travel-packages">
-            <Button className="bg-raahi-blue hover:bg-raahi-blue-dark">
+            <Button variant="default">
               View All Packages
-              <ArrowRight size={16} className="ml-2" />
+              <ArrowRight size={16} />
             </Button>
           </Link>
         </div>
@@ -160,9 +159,9 @@ const Index: React.FC = () => {
           
           <div className="mt-12 text-center">
             <Link to="/explore-india">
-              <Button className="bg-raahi-blue hover:bg-raahi-blue-dark">
+              <Button variant="default">
                 View All Cities
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRight size={16} />
               </Button>
             </Link>
           </div>
@@ -179,14 +178,14 @@ const Index: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
           {/* Digital Scrapbook */}
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-raahi-blue-light rounded-full mb-4">
-              <Book size={24} className="text-raahi-blue" />
+            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mb-4">
+              <Book size={24} className="text-primary" />
             </div>
             <h3 className="text-xl font-bold mb-3">Digital Scrapbook</h3>
             <p className="text-gray-600 mb-4">
               Create beautiful digital memories of your trips with our easy-to-use scrapbook templates.
             </p>
-            <Link to="/scrapbook" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/scrapbook" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               Try Scrapbook <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
@@ -200,21 +199,21 @@ const Index: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Share your travel moments, like and comment on others' experiences, and find inspiration.
             </p>
-            <Link to="/social-feed" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/social-feed" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               View Feed <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
           
           {/* Live Trip Tracker */}
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-raahi-blue-light rounded-full mb-4">
-              <MapPin size={24} className="text-raahi-blue" />
+            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mb-4">
+              <MapPin size={24} className="text-primary" />
             </div>
             <h3 className="text-xl font-bold mb-3">Trip Tracker</h3>
             <p className="text-gray-600 mb-4">
               Track your group's journey in real-time and share your location with friends and family.
             </p>
-            <Link to="/trip-tracker" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/trip-tracker" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               Try Tracker <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
@@ -255,13 +254,13 @@ const Index: React.FC = () => {
       
       {/* CTA Section */}
       <section className="section-container">
-        <div className="bg-gradient-to-r from-raahi-blue to-raahi-orange rounded-xl p-8 md:p-12 text-white text-center">
+        <div className="bg-gradient-to-r from-primary to-raahi-orange rounded-xl p-8 md:p-12 text-white text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Journey?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Join thousands of travelers who are discovering India's beauty with Raahi as their trusted companion.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="bg-white text-raahi-blue hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-primary hover:bg-gray-100">
               <Users size={18} className="mr-2" />
               Sign Up Now
             </Button>

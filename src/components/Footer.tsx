@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube, Mail } from 'lucide-react';
@@ -11,7 +10,7 @@ const Footer: React.FC = () => {
           {/* Logo and about */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center">
-              <span className="font-poppins font-bold text-2xl text-raahi-blue">
+              <span className="font-poppins font-bold text-2xl text-primary">
                 <span className="text-raahi-orange">R</span>aahi
               </span>
             </Link>
@@ -19,10 +18,10 @@ const Footer: React.FC = () => {
               Your smart travel companion that helps you create, capture, and remember your most beautiful travel memories.
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-raahi-blue transition">
+              <a href="#" className="text-gray-400 hover:text-primary transition">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="text-gray-400 hover:text-raahi-blue transition">
+              <a href="#" className="text-gray-400 hover:text-primary transition">
                 <Twitter size={20} />
               </a>
               <a href="#" className="text-gray-400 hover:text-raahi-orange transition">
@@ -38,11 +37,11 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link to="/" className="text-gray-600 hover:text-raahi-blue transition">Home</Link></li>
-              <li><Link to="/travel-packages" className="text-gray-600 hover:text-raahi-blue transition">Travel Packages</Link></li>
-              <li><Link to="/explore-india" className="text-gray-600 hover:text-raahi-blue transition">Explore India</Link></li>
-              <li><Link to="/scrapbook" className="text-gray-600 hover:text-raahi-blue transition">Digital Scrapbook</Link></li>
-              <li><Link to="/social-feed" className="text-gray-600 hover:text-raahi-blue transition">Travelgram</Link></li>
+              <li><Link to="/" className="text-gray-600 hover:text-primary transition">Home</Link></li>
+              <li><Link to="/travel-packages" className="text-gray-600 hover:text-primary transition">Travel Packages</Link></li>
+              <li><Link to="/explore-india" className="text-gray-600 hover:text-primary transition">Explore India</Link></li>
+              <li><Link to="/scrapbook" className="text-gray-600 hover:text-primary transition">Digital Scrapbook</Link></li>
+              <li><Link to="/social-feed" className="text-gray-600 hover:text-primary transition">Travelgram</Link></li>
             </ul>
           </div>
 
@@ -50,11 +49,11 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-6">Popular Destinations</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-gray-600 hover:text-raahi-blue transition">Goa</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-raahi-blue transition">Kerala</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-raahi-blue transition">Rajasthan</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-raahi-blue transition">Himachal Pradesh</a></li>
-              <li><a href="#" className="text-gray-600 hover:text-raahi-blue transition">Andaman & Nicobar</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-primary transition">Goa</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-primary transition">Kerala</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-primary transition">Rajasthan</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-primary transition">Himachal Pradesh</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-primary transition">Andaman & Nicobar</a></li>
             </ul>
           </div>
 
@@ -68,9 +67,9 @@ const Footer: React.FC = () => {
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-grow px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-raahi-blue rounded-l-md"
+                className="flex-grow px-4 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary rounded-l-md"
               />
-              <button className="bg-raahi-blue hover:bg-raahi-blue-dark text-white px-4 py-2 rounded-r-md transition">
+              <button className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-r-md transition">
                 <Mail size={20} />
               </button>
             </div>

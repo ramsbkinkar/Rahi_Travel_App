@@ -1,5 +1,6 @@
-
 import type { Config } from "tailwindcss";
+// @ts-ignore
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -20,17 +21,24 @@ export default {
 		},
 		extend: {
 			colors: {
+				raahi: {
+					blue: '#00B6F1',
+					orange: '#FF6B1B',
+					'blue-hover': '#00A3D8',
+					'orange-hover': '#E65A0F',
+					'blue-light': '#E6F7FD',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: '#00B6F1',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
+					DEFAULT: '#4A5568',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
@@ -42,7 +50,7 @@ export default {
 					foreground: 'hsl(var(--muted-foreground))'
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))',
+					DEFAULT: '#FF6B1B',
 					foreground: 'hsl(var(--accent-foreground))'
 				},
 				popover: {
@@ -62,18 +70,6 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				},
-				raahi: {
-					blue: {
-						light: '#D3E4FD',
-						DEFAULT: '#0EA5E9',
-						dark: '#0284C7'
-					},
-					orange: {
-						light: '#FEC6A1',
-						DEFAULT: '#F97316',
-						dark: '#C2410C'
-					}
 				}
 			},
 			borderRadius: {
@@ -134,5 +130,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindAnimate],
 } satisfies Config;

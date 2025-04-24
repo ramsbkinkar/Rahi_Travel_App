@@ -25,6 +25,7 @@ module.exports = {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
+        
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -53,6 +54,9 @@ module.exports = {
         'raahi-blue-dark': '#0052CC',
         'raahi-orange': '#FF6B00',
         'raahi-orange-dark': '#CC5500',
+      },
+      backgroundImage: {
+        'hero-pattern': "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1950&q=80')",
       },
       borderRadius: {
         lg: "var(--radius)",

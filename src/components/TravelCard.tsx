@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +55,7 @@ const TravelCard: React.FC<TravelCardProps> = ({
       <CardFooter className="border-t border-gray-100 pt-4">
         <Link 
           to={`/travel-packages/${id || 'detail'}`} 
-          className="text-raahi-blue hover:text-raahi-blue-dark font-medium text-sm w-full text-center transition"
+          className="text-primary hover:text-primary/90 font-medium text-sm w-full text-center transition"
         >
           View Details
         </Link>

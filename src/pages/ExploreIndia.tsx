@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
@@ -135,8 +134,8 @@ const ExploreIndia: React.FC = () => {
                   key={region}
                   className={`px-4 py-2 whitespace-nowrap ${
                     activeRegion === region
-                      ? "bg-raahi-blue text-white rounded-md"
-                      : "text-gray-600 hover:text-raahi-blue"
+                      ? "bg-primary text-white rounded-md"
+                      : "text-gray-600 hover:text-primary"
                   }`}
                   onClick={() => setActiveRegion(region)}
                 >

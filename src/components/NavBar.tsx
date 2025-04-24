@@ -63,7 +63,7 @@ const NavBar = () => {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center">
-              <span className="font-poppins font-bold text-2xl text-raahi-blue">
+              <span className="font-poppins font-bold text-2xl text-primary">
                 <span className="text-raahi-orange">R</span>aahi
               </span>
             </Link>
@@ -75,7 +75,7 @@ const NavBar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-gray-600 hover:text-raahi-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 {link.label}
               </Link>
@@ -149,7 +149,7 @@ const NavBar = () => {
                       <Link
                         key={link.to}
                         to={link.to}
-                        className="text-gray-600 hover:text-raahi-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                        className="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
                       >
                         {link.label}
                       </Link>

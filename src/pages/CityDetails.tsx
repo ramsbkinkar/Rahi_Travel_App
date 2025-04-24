@@ -5,7 +5,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Calendar, Clock, Home, Building, Utensils, Bus, Phone, Heart, ChevronRight } from "lucide-react";
+import { Loader2, MapPin, Calendar, Clock, Home, Building, Utensils, Bus, Phone, Heart, ChevronRight, ArrowLeft, Sun } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import NavBar from '@/components/NavBar';
@@ -25,7 +25,7 @@ const CityDetails = () => {
       <div className="min-h-screen bg-gray-50">
         <NavBar />
         <div className="container mx-auto py-20 flex justify-center items-center">
-          <Loader2 className="w-8 h-8 animate-spin text-raahi-blue" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
         <Footer />
       </div>
@@ -39,7 +39,7 @@ const CityDetails = () => {
         <div className="container mx-auto py-20">
           <h1 className="text-4xl font-bold mb-4">City Not Found</h1>
           <p className="text-gray-600 mb-4">Sorry, we couldn't find information about this city.</p>
-          <Link to="/explore-india" className="text-raahi-blue hover:underline inline-flex items-center">
+          <Link to="/explore-india" className="text-primary hover:underline inline-flex items-center">
             <ChevronRight className="h-4 w-4 mr-1" />
             Back to Explore India
           </Link>
@@ -143,7 +143,7 @@ const CityDetails = () => {
                   <AccordionItem key={section.id} value={section.id} className="border rounded-lg mb-2 bg-white">
                     <AccordionTrigger className="px-4 hover:no-underline">
                       <div className="flex items-center">
-                        <div className="mr-3 text-raahi-blue">
+                        <div className="mr-3 text-primary">
                           {section.icon}
                         </div>
                         <span className="font-medium">{section.title}</span>
@@ -169,7 +169,7 @@ const CityDetails = () => {
                   <div>
                     <div className="text-sm font-medium text-gray-500">Best Time to Visit</div>
                     <div className="flex items-center mt-2">
-                      <Calendar className="h-5 w-5 mr-2 text-raahi-blue" />
+                      <Calendar className="h-5 w-5 mr-2 text-primary" />
                       <span className="text-gray-700">{city.best_time_to_visit}</span>
                     </div>
                   </div>
@@ -184,12 +184,12 @@ const CityDetails = () => {
                   to="/explore-india" 
                   className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-md bg-raahi-blue/10 flex items-center justify-center mr-3">
-                    <MapPin className="h-6 w-6 text-raahi-blue" />
+                  <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center mr-3">
+                    <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Explore more destinations</div>
-                    <div className="text-sm text-raahi-blue">View all cities</div>
+                    <div className="text-sm text-primary">View all cities</div>
                   </div>
                 </Link>
               </CardContent>

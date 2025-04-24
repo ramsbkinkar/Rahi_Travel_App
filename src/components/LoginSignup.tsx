@@ -17,7 +17,7 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ isOpen, onClose, defaultIsSig
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold text-raahi-blue">
+          <DialogTitle className="text-center text-2xl font-bold text-primary">
             <span className="text-raahi-orange">R</span>aahi Account
           </DialogTitle>
         </DialogHeader>
