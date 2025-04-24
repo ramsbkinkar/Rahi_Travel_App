@@ -139,7 +139,7 @@ const TripTracker: React.FC = () => {
       <NavBar />
       
       {/* Hero Section */}
-      <section className="pt-28 pb-8 bg-[#E6F0FF]">
+      <section className="pt-28 pb-16 bg-[#E6F0FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl font-bold mb-6">Live Group Trip Tracker</h1>
@@ -172,7 +172,7 @@ const TripTracker: React.FC = () => {
       </section>
       
       {/* Map Section */}
-      <section className="pb-12">
+      <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             {/* Map Container */}
