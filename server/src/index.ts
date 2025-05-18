@@ -11,7 +11,10 @@ const port = process.env.PORT || 3000;
 // CORS configuration
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
+  'http://localhost:8000',
   'http://localhost:8080',
+  'http://localhost:3000',
+  'http://192.168.31.185:8000',
   'http://192.168.31.185:8080'
 ];
 
@@ -20,6 +23,9 @@ app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // For development, you can enable this to see which origin is being blocked
+    console.log('Request from origin:', origin);
     
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
