@@ -13,6 +13,7 @@ import ExploreIndia from "./pages/ExploreIndia";
 import CityDetails from "./pages/CityDetails";
 import Scrapbook from "./pages/Scrapbook";
 import SocialFeed from "./pages/SocialFeed";
+import UserProfile from "./pages/UserProfile";
 import TripTracker from "./pages/TripTracker";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
@@ -57,6 +58,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <SocialFeed />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/profile/:id" 
+                      element={
+                        <ProtectedRoute>
+                          <UserProfile />
                         </ProtectedRoute>
                       } 
                     />

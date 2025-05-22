@@ -1,7 +1,9 @@
 import React, { useState, useRef, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import SocialPost from '@/components/SocialPost';
+import UserSearch from '@/components/UserSearch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -11,7 +13,8 @@ import {
   Hash, 
   Upload,
   Camera,
-  Loader
+  Loader,
+  Users
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +32,9 @@ const SocialFeed: React.FC = () => {
   const [location, setLocation] = useState('');
   const [hashtags, setHashtags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -50,6 +55,12 @@ const SocialFeed: React.FC = () => {
     const term = e.target.value;
     setSearchTerm(term);
     searchPosts(term);
+  };
+
+  const handleViewProfile = () => {
+    if (user) {
+      navigate(`/profile/${user.id}`);
+    }
   };
 
   const handleFilterClick = (filter: 'latest' | 'popular' | 'following') => {
@@ -159,7 +170,27 @@ const SocialFeed: React.FC = () => {
       <section className="pt-28 pb-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h1 className="text-3xl font-bold">Travelgram</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold">Travelgram</h1>
+              
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleViewProfile}
+                >
+                  My Profile
+                </Button>
+              )}
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIsSearchModalOpen(true)}
+              >
+                <Users size={18} />
+              </Button>
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative">
@@ -406,6 +437,21 @@ const SocialFeed: React.FC = () => {
           </div>
         </div>
       </section>
+      
+      {/* User Search Modal */}
+      <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center">Find Travelers</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            <UserSearch placeholder="Search by username..." />
+            <p className="text-xs text-gray-500 mt-2">
+              Type at least 2 characters to search for users
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>

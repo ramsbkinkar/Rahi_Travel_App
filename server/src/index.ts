@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import postRoutes from './routes/posts';
 import uploadRoutes from './routes/uploads';
+import userRoutes from './routes/users';
 import initializeDatabase from './db/init';
 import path from 'path';
 
@@ -54,6 +55,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

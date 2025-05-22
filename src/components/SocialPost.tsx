@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageSquare, Share, Bookmark, MoreHorizontal } from 'lucide-react';
@@ -30,6 +31,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
   likes: initialLikes,
   comments: commentsCount,
   timestamp,
+  user_id,
   tags
 }) => {
   const [liked, setLiked] = useState(false);
@@ -93,7 +95,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
     <Card className="mb-6 overflow-hidden">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <Link to={`/profile/${user_id}`} className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
           <Avatar>
             <AvatarImage src={avatar} alt={username} />
             <AvatarFallback>{username.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -102,7 +104,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
             <div className="font-medium">{username}</div>
             {location && <div className="text-xs text-gray-500">{location}</div>}
           </div>
-        </div>
+        </Link>
         <button>
           <MoreHorizontal size={20} className="text-gray-500" />
         </button>
@@ -149,7 +151,9 @@ const SocialPost: React.FC<SocialPostProps> = ({
         
         {/* Caption */}
         <div className="mt-1">
-          <span className="font-medium mr-2">{username}</span>
+          <Link to={`/profile/${user_id}`} className="font-medium mr-2 hover:underline">
+            {username}
+          </Link>
           <span>{caption}</span>
         </div>
         
@@ -177,7 +181,9 @@ const SocialPost: React.FC<SocialPostProps> = ({
               <div className="max-h-40 overflow-y-auto">
                 {commentsList.map(comment => (
                   <div key={comment.id} className="mb-2">
-                    <span className="font-medium mr-1">{comment.username}</span>
+                    <Link to={`/profile/${comment.user_id}`} className="font-medium mr-1 hover:underline">
+                      {comment.username}
+                    </Link>
                     <span className="text-sm">{comment.content}</span>
                     <div className="text-xs text-gray-400 mt-1">
                       {formatTimestamp(comment.created_at)}

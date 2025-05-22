@@ -73,6 +73,22 @@ export interface Comment {
   avatar_url: string;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email?: string;
+  avatar_url?: string;
+  bio?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface UserProfile {
+  user: User;
+  postCount: number;
+  posts: Post[];
+}
+
 interface PostsResponse {
   status: 'success' | 'error';
   data?: Post[];
@@ -102,6 +118,24 @@ interface LikeResponse {
     action: 'liked' | 'unliked';
     likes_count: number;
   };
+  message?: string;
+}
+
+interface UserProfileResponse {
+  status: 'success' | 'error';
+  data?: UserProfile;
+  message?: string;
+}
+
+interface UserResponse {
+  status: 'success' | 'error';
+  data?: User;
+  message?: string;
+}
+
+interface UsersSearchResponse {
+  status: 'success' | 'error';
+  data?: User[];
   message?: string;
 }
 
@@ -233,6 +267,76 @@ class ApiClient {
       return response.data;
     } catch (error) {
       console.error(`Failed to add comment to post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  // User profile methods
+  async getUserProfile(userId: number): Promise<UserProfileResponse> {
+    try {
+      const response: AxiosResponse<UserProfileResponse> = await axiosInstance.get(`/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to fetch user profile ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async updateUserProfile(userId: number, bio: string, avatarUrl?: string): Promise<UserResponse> {
+    try {
+      const user_id = parseInt(localStorage.getItem('authToken') || '0');
+      
+      // Only allow updating own profile
+      if (userId !== user_id) {
+        throw new Error('You can only update your own profile');
+      }
+      
+      const data: any = { bio, user_id };
+      if (avatarUrl) {
+        data.avatar_url = avatarUrl;
+      }
+      
+      const response: AxiosResponse<UserResponse> = await axiosInstance.put(`/users/${userId}`, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to update user profile ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async getUserPosts(userId: number, page = 1, limit = 10): Promise<PostsResponse> {
+    try {
+      const response: AxiosResponse<PostsResponse> = await axiosInstance.get(`/users/${userId}/posts`, {
+        params: { page, limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to fetch posts for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async searchUsers(query: string): Promise<UsersSearchResponse> {
+    try {
+      const response: AxiosResponse<UsersSearchResponse> = await axiosInstance.get('/users/search/users', {
+        params: { q: query }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to search users:', error);
+      throw error;
+    }
+  }
+
+  async uploadAvatar(imageBase64: string): Promise<{ status: string; data?: { image_url: string } }> {
+    try {
+      const response: AxiosResponse<any> = await axiosInstance.post('/uploads/image', {
+        image: imageBase64,
+        folder: 'avatars'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
       throw error;
     }
   }
