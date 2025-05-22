@@ -9,6 +9,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import React, { Suspense } from "react";
 import Index from "./pages/Index";
 import TravelPackages from "./pages/TravelPackages";
+import PackageDetails from "./pages/PackageDetails";
 import ExploreIndia from "./pages/ExploreIndia";
 import CityDetails from "./pages/CityDetails";
 import Scrapbook from "./pages/Scrapbook";
@@ -43,6 +44,7 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/travel-packages" element={<TravelPackages />} />
+                    <Route path="/travel-packages/:id" element={<PackageDetails />} />
                     <Route path="/explore-india" element={<ExploreIndia />} />
                     <Route path="/explore-india/:citySlug" element={<CityDetails />} />
                     <Route 
