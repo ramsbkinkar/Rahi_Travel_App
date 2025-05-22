@@ -50,6 +50,61 @@ interface AuthResponse {
   message?: string;
 }
 
+export interface Post {
+  id: number;
+  caption: string;
+  location: string;
+  image_url: string;
+  likes_count: number;
+  created_at: string;
+  user_id: number;
+  username: string;
+  avatar_url: string;
+  comments_count: number;
+  tags: string[];
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  created_at: string;
+  user_id: number;
+  username: string;
+  avatar_url: string;
+}
+
+interface PostsResponse {
+  status: 'success' | 'error';
+  data?: Post[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+  message?: string;
+}
+
+interface PostResponse {
+  status: 'success' | 'error';
+  data?: Post;
+  message?: string;
+}
+
+interface CommentsResponse {
+  status: 'success' | 'error';
+  data?: Comment[];
+  message?: string;
+}
+
+interface LikeResponse {
+  status: 'success' | 'error';
+  data?: {
+    action: 'liked' | 'unliked';
+    likes_count: number;
+  };
+  message?: string;
+}
+
 class ApiClient {
   async signup(name: string, email: string, password: string): Promise<AuthResponse> {
     try {
@@ -86,6 +141,100 @@ class ApiClient {
 
   async logout(): Promise<void> {
     localStorage.removeItem('authToken');
+  }
+
+  // Social feed methods
+  async getPosts(page = 1, limit = 10): Promise<PostsResponse> {
+    try {
+      const response: AxiosResponse<PostsResponse> = await axiosInstance.get('/posts', {
+        params: { page, limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+      throw error;
+    }
+  }
+
+  async getPost(postId: number): Promise<PostResponse> {
+    try {
+      const response: AxiosResponse<PostResponse> = await axiosInstance.get(`/posts/${postId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to fetch post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  async createPost(
+    caption: string, 
+    location: string,
+    imageBase64: string,
+    tags: string[]
+  ): Promise<PostResponse> {
+    try {
+      // First upload the image
+      const uploadResponse: AxiosResponse<any> = await axiosInstance.post('/uploads/image', {
+        image: imageBase64,
+        folder: 'posts'
+      });
+
+      if (uploadResponse.data.status !== 'success') {
+        throw new Error('Failed to upload image');
+      }
+
+      const image_url = uploadResponse.data.data.image_url;
+      const user_id = parseInt(localStorage.getItem('authToken') || '0');
+
+      // Then create the post with the image URL
+      const response: AxiosResponse<PostResponse> = await axiosInstance.post('/posts', {
+        caption,
+        location,
+        image_url,
+        tags,
+        user_id
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      throw error;
+    }
+  }
+
+  async likePost(postId: number): Promise<LikeResponse> {
+    try {
+      const user_id = parseInt(localStorage.getItem('authToken') || '0');
+      const response: AxiosResponse<LikeResponse> = await axiosInstance.post(`/posts/${postId}/like`, { user_id });
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to like/unlike post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  async getComments(postId: number): Promise<CommentsResponse> {
+    try {
+      const response: AxiosResponse<CommentsResponse> = await axiosInstance.get(`/posts/${postId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to fetch comments for post ${postId}:`, error);
+      throw error;
+    }
+  }
+
+  async addComment(postId: number, content: string): Promise<{ status: string; data?: Comment }> {
+    try {
+      const user_id = parseInt(localStorage.getItem('authToken') || '0');
+      const response: AxiosResponse<{ status: string; data?: Comment }> = await axiosInstance.post(
+        `/posts/${postId}/comment`, 
+        { user_id, content }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to add comment to post ${postId}:`, error);
+      throw error;
+    }
   }
 }
 

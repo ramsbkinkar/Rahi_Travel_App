@@ -1,10 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, MessageSquare, Share, Bookmark, MoreHorizontal } from 'lucide-react';
+import { useSocial } from '@/contexts/SocialContext';
+import { formatDistanceToNow } from 'date-fns';
+import { Comment } from '@/integration/api/client';
 
 interface SocialPostProps {
+  id: number;
   username: string;
   avatar: string;
   image: string;
@@ -13,31 +16,77 @@ interface SocialPostProps {
   likes: number;
   comments: number;
   timestamp: string;
+  user_id: number;
   tags: string[];
 }
 
 const SocialPost: React.FC<SocialPostProps> = ({
+  id,
   username,
   avatar,
   image,
   caption,
   location,
   likes: initialLikes,
-  comments,
+  comments: commentsCount,
   timestamp,
   tags
 }) => {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(initialLikes);
   const [saved, setSaved] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsList, setCommentsList] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [loading, setLoading] = useState(false);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   
-  const handleLike = () => {
+  const { likePost, getComments, addComment } = useSocial();
+  
+  const handleLike = async () => {
+    setLiked(!liked);
     if (liked) {
       setLikes(likes - 1);
     } else {
       setLikes(likes + 1);
     }
-    setLiked(!liked);
+    
+    // Call the API to update the like status
+    await likePost(id);
+  };
+  
+  const handleShowComments = async () => {
+    if (!showComments) {
+      setLoading(true);
+      const comments = await getComments(id);
+      setCommentsList(comments);
+      setLoading(false);
+    }
+    setShowComments(!showComments);
+  };
+  
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    
+    const comment = await addComment(id, newComment);
+    if (comment) {
+      setCommentsList([comment, ...commentsList]);
+      setNewComment('');
+    }
+  };
+  
+  const formatTimestamp = (dateString: string): string => {
+    try {
+      // If it's already a relative time string like "2 hours ago"
+      if (dateString.includes('ago')) {
+        return dateString;
+      }
+      
+      // Otherwise, format the date
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+      return dateString;
+    }
   };
   
   return (
@@ -77,7 +126,10 @@ const SocialPost: React.FC<SocialPostProps> = ({
                 className={`${liked ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
               />
             </button>
-            <button className="flex items-center space-x-1">
+            <button 
+              className="flex items-center space-x-1"
+              onClick={handleShowComments}
+            >
               <MessageSquare size={24} className="text-gray-700" />
             </button>
             <button className="flex items-center space-x-1">
@@ -109,13 +161,39 @@ const SocialPost: React.FC<SocialPostProps> = ({
         </div>
         
         {/* Comments */}
-        <div className="mt-2 text-gray-500 text-sm">
-          View all {comments} comments
+        <div 
+          className="mt-2 text-gray-500 text-sm cursor-pointer"
+          onClick={handleShowComments}
+        >
+          View all {commentsCount} comments
         </div>
+        
+        {/* Comment list */}
+        {showComments && (
+          <div className="mt-2 border-t pt-2">
+            {loading ? (
+              <div className="text-center py-2 text-sm text-gray-500">Loading comments...</div>
+            ) : commentsList.length > 0 ? (
+              <div className="max-h-40 overflow-y-auto">
+                {commentsList.map(comment => (
+                  <div key={comment.id} className="mb-2">
+                    <span className="font-medium mr-1">{comment.username}</span>
+                    <span className="text-sm">{comment.content}</span>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {formatTimestamp(comment.created_at)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-2 text-sm text-gray-500">No comments yet</div>
+            )}
+          </div>
+        )}
         
         {/* Time */}
         <div className="mt-1 text-gray-400 text-xs uppercase">
-          {timestamp}
+          {formatTimestamp(timestamp)}
         </div>
       </CardContent>
       
@@ -123,11 +201,23 @@ const SocialPost: React.FC<SocialPostProps> = ({
       <CardFooter className="border-t p-4">
         <div className="flex items-center w-full">
           <input 
+            ref={commentInputRef}
             type="text" 
             placeholder="Add a comment..." 
             className="flex-1 focus:outline-none text-sm"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleAddComment();
+              }
+            }}
           />
-          <button className="text-raahi-blue font-semibold text-sm">
+          <button 
+            className="text-raahi-blue font-semibold text-sm"
+            onClick={handleAddComment}
+            disabled={!newComment.trim()}
+          >
             Post
           </button>
         </div>

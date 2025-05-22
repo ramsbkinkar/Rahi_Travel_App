@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
+import postRoutes from './routes/posts';
+import uploadRoutes from './routes/uploads';
+import initializeDatabase from './db/init';
+import path from 'path';
 
 dotenv.config();
 
@@ -38,20 +42,31 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase payload limit for image uploads
 
 // Enable pre-flight requests for all routes
 app.options('*', cors());
 
+// Serve static files from public directory
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`CORS enabled for origins:`, allowedOrigins);
+// Initialize the database before starting the server
+initializeDatabase().then(() => {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+    console.log(`CORS enabled for origins:`, allowedOrigins);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 }); 
