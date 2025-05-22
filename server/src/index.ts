@@ -6,6 +6,7 @@ import postRoutes from './routes/posts';
 import uploadRoutes from './routes/uploads';
 import userRoutes from './routes/users';
 import initializeDatabase from './db/init';
+import { createTestUsers } from './db/create-user';
 import path from 'path';
 
 dotenv.config();
@@ -63,7 +64,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // Initialize the database before starting the server
-initializeDatabase().then(() => {
+initializeDatabase().then(async () => {
+  // Create test users if they don't exist
+  await createTestUsers();
+  
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
     console.log(`CORS enabled for origins:`, allowedOrigins);

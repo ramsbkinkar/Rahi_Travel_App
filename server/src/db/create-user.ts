@@ -1,7 +1,7 @@
 import { dbAsync } from '../config/db';
 import bcrypt from 'bcryptjs';
 
-const createTestUsers = async () => {
+export const createTestUsers = async () => {
   try {
     // First, check and add the 'bio' column if it doesn't exist
     try {
@@ -85,5 +85,7 @@ const createTestUsers = async () => {
   }
 };
 
-// Run the function
-createTestUsers(); 
+// Run the function if this file is executed directly
+if (require.main === module) {
+  createTestUsers();
+} 

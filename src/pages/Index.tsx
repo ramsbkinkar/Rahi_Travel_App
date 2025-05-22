@@ -10,7 +10,7 @@ const Index: React.FC = () => {
   // Sample travel packages
   const travelPackages = [
     {
-      id: 1,
+      id: "1",
       image: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
       title: "Serene Kashmir Voyage",
       location: "Kashmir, India",
@@ -19,7 +19,7 @@ const Index: React.FC = () => {
       category: "Honeymoon"
     },
     {
-      id: 2,
+      id: "2",
       image: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb",
       title: "Goa Beach Adventure",
       location: "Goa, India",
@@ -28,7 +28,7 @@ const Index: React.FC = () => {
       category: "Friends"
     },
     {
-      id: 3,
+      id: "3",
       image: "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
       title: "Rajasthan Heritage Tour",
       location: "Rajasthan, India",
@@ -113,6 +113,7 @@ const Index: React.FC = () => {
               duration={pkg.duration}
               price={pkg.price}
               category={pkg.category}
+              id={pkg.id}
             />
           ))}
         </div>

@@ -1,14 +1,5 @@
--- Drop tables if they exist
-DROP TABLE IF EXISTS likes;
-DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS group_members;
-DROP TABLE IF EXISTS groups;
-DROP TABLE IF EXISTS post_tags;
-DROP TABLE IF EXISTS posts;
-DROP TABLE IF EXISTS users;
-
--- Create users table
-CREATE TABLE users (
+-- Create tables if they don't exist
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
@@ -20,7 +11,7 @@ CREATE TABLE users (
 );
 
 -- Create posts table
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     caption TEXT,
@@ -33,7 +24,7 @@ CREATE TABLE posts (
 );
 
 -- Create post_tags table
-CREATE TABLE post_tags (
+CREATE TABLE IF NOT EXISTS post_tags (
     post_id INTEGER,
     tag TEXT,
     PRIMARY KEY (post_id, tag),
@@ -41,7 +32,7 @@ CREATE TABLE post_tags (
 );
 
 -- Create groups table
-CREATE TABLE groups (
+CREATE TABLE IF NOT EXISTS groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
@@ -53,7 +44,7 @@ CREATE TABLE groups (
 );
 
 -- Create group_members table
-CREATE TABLE group_members (
+CREATE TABLE IF NOT EXISTS group_members (
     group_id INTEGER,
     user_id INTEGER,
     role TEXT DEFAULT 'member',
@@ -64,7 +55,7 @@ CREATE TABLE group_members (
 );
 
 -- Create comments table
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id INTEGER,
     user_id INTEGER,
@@ -76,7 +67,7 @@ CREATE TABLE comments (
 );
 
 -- Create likes table
-CREATE TABLE likes (
+CREATE TABLE IF NOT EXISTS likes (
     post_id INTEGER,
     user_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
