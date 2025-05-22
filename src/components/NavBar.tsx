@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -12,9 +12,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Menu, User } from 'lucide-react';
+import { Menu, User, Settings, LogOut } from 'lucide-react';
 import LoginSignup from './LoginSignup';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ const NavBar = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const navigationLinks = [
     { to: "/", label: "Home" },
@@ -54,6 +56,20 @@ const NavBar = () => {
   const openAuth = (isSigningUp: boolean) => {
     setIsSignUp(isSigningUp);
     setIsAuthOpen(true);
+  };
+
+  const handleProfileClick = () => {
+    if (user) {
+      navigate(`/profile/${user.id}`);
+    }
+  };
+
+  const handleSettingsClick = () => {
+    // For now, just show a toast as settings page is not implemented
+    toast({
+      title: "Coming Soon",
+      description: "Settings page is under development.",
+    });
   };
 
   return (
@@ -96,8 +112,18 @@ const NavBar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleProfileClick}>
+                    <User className="h-4 w-4 mr-2" />
+                    My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSettingsClick}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    Sign Out
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

@@ -172,36 +172,28 @@ const SocialFeed: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold">Travelgram</h1>
-              
-              {user && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleViewProfile}
-                >
-                  My Profile
-                </Button>
-              )}
-              
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setIsSearchModalOpen(true)}
-              >
-                <Users size={18} />
-              </Button>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search posts, locations, hashtags..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                />
+              <div className="relative flex w-full">
+                <div className="relative flex-grow">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search posts, locations, hashtags..."
+                    className="pl-10 pr-4"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                  />
+                </div>
+                <Button 
+                  variant="ghost"
+                  className="ml-2"
+                  onClick={() => setIsSearchModalOpen(true)}
+                >
+                  <Users size={16} className="mr-2" />
+                  Find Users
+                </Button>
               </div>
               
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
