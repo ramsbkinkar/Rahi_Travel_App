@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from '@/components/ui/badge';
@@ -434,22 +433,20 @@ const PackageDetails = () => {
         </div>
       </div>
 
-      {/* Breadcrumb */}
+      {/* Navigation Links */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <Breadcrumb>
-            <BreadcrumbItem>
-              <Link to="/" className="text-gray-500 hover:text-gray-900">Home</Link>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <Link to="/travel-packages" className="text-gray-500 hover:text-gray-900">Travel Packages</Link>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <span className="font-medium">{packageData.title}</span>
-            </BreadcrumbItem>
-          </Breadcrumb>
+          <div className="flex items-center text-sm">
+            <Link to="/" className="text-gray-500 hover:text-primary transition-colors">
+              Home
+            </Link>
+            <span className="mx-2 text-gray-400">/</span>
+            <Link to="/travel-packages" className="text-gray-500 hover:text-primary transition-colors">
+              Travel Packages
+            </Link>
+            <span className="mx-2 text-gray-400">/</span>
+            <span className="text-gray-800 font-medium">{packageData.title}</span>
+          </div>
         </div>
       </div>
       
