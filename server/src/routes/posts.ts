@@ -355,4 +355,47 @@ router.get('/:id/comments', async (req: Request, res: Response) => {
   }
 });
 
+// Check if user has liked a post
+router.get('/:id/liked', async (req: Request, res: Response) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const userId = parseInt(req.query.user_id as string);
+    
+    if (!userId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User ID is required'
+      });
+    }
+    
+    // Check if post exists
+    const post = await dbAsync.get('SELECT id FROM posts WHERE id = ?', [postId]);
+    if (!post) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Post not found'
+      });
+    }
+    
+    // Check if user has liked the post
+    const existingLike = await dbAsync.get(
+      'SELECT post_id FROM likes WHERE post_id = ? AND user_id = ?',
+      [postId, userId]
+    );
+    
+    res.json({
+      status: 'success',
+      data: {
+        liked: !!existingLike
+      }
+    });
+  } catch (error) {
+    console.error('Error checking like status:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Server error' 
+    });
+  }
+});
+
 export default router; 

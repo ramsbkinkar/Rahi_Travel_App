@@ -6,6 +6,8 @@ import { Heart, MessageSquare, Share, Bookmark, MoreHorizontal } from 'lucide-re
 import { useSocial } from '@/contexts/SocialContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Comment } from '@/integration/api/client';
+import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
 
 interface SocialPostProps {
   id: number;
@@ -41,20 +43,55 @@ const SocialPost: React.FC<SocialPostProps> = ({
   const [commentsList, setCommentsList] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingLikeStatus, setCheckingLikeStatus] = useState(true);
   const commentInputRef = useRef<HTMLInputElement>(null);
   
   const { likePost, getComments, addComment } = useSocial();
+  const { user } = useAuth();
+
+  // Check if current user has already liked this post
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await axios.get(`http://localhost:3000/api/posts/${id}/liked`, {
+          params: { user_id: user.id }
+        });
+        
+        if (response.data.status === 'success') {
+          setLiked(response.data.data.liked);
+        }
+      } catch (err) {
+        console.error('Error checking like status:', err);
+      } finally {
+        setCheckingLikeStatus(false);
+      }
+    };
+    
+    checkLikeStatus();
+  }, [id, user]);
   
   const handleLike = async () => {
-    setLiked(!liked);
-    if (liked) {
-      setLikes(likes - 1);
-    } else {
-      setLikes(likes + 1);
-    }
+    if (checkingLikeStatus) return; // Prevent action while checking status
+    
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setLikes(prevLikes => newLikedState ? prevLikes + 1 : prevLikes - 1);
     
     // Call the API to update the like status
-    await likePost(id);
+    try {
+      const response = await likePost(id);
+      // If we get a response with updated likes count, use that instead
+      if (response && response.likes_count !== undefined) {
+        setLikes(response.likes_count);
+      }
+    } catch (err) {
+      // Revert on error
+      setLiked(!newLikedState);
+      setLikes(prevLikes => !newLikedState ? prevLikes + 1 : prevLikes - 1);
+      console.error('Error updating like status:', err);
+    }
   };
   
   const handleShowComments = async () => {
@@ -122,6 +159,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
             <button 
               onClick={handleLike}
               className="flex items-center space-x-1"
+              disabled={checkingLikeStatus}
             >
               <Heart 
                 size={24} 

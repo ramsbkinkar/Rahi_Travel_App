@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiClient, Post, Comment } from '@/integration/api/client';
 import { useAuth } from './AuthContext';
 
+interface LikeResponse {
+  action: 'liked' | 'unliked';
+  likes_count: number;
+}
+
 interface SocialContextType {
   posts: Post[];
   loading: boolean;
@@ -11,7 +16,7 @@ interface SocialContextType {
   totalPosts: number;
   fetchPosts: (page?: number) => Promise<void>;
   createPost: (caption: string, location: string, imageBase64: string, tags: string[]) => Promise<void>;
-  likePost: (postId: number) => Promise<void>;
+  likePost: (postId: number) => Promise<LikeResponse | undefined>;
   getComments: (postId: number) => Promise<Comment[]>;
   addComment: (postId: number, content: string) => Promise<Comment | undefined>;
   searchPosts: (term: string) => void;
@@ -30,7 +35,7 @@ const SocialContext = createContext<SocialContextType>({
   totalPosts: 0,
   fetchPosts: async () => {},
   createPost: async () => {},
-  likePost: async () => {},
+  likePost: async () => undefined,
   getComments: async () => [],
   addComment: async () => undefined,
   searchPosts: () => {},
@@ -110,8 +115,8 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // Like/unlike a post
-  const likePost = async (postId: number) => {
-    if (!isAuthenticated) return;
+  const likePost = async (postId: number): Promise<LikeResponse | undefined> => {
+    if (!isAuthenticated) return undefined;
     
     try {
       const response = await apiClient.likePost(postId);
@@ -125,9 +130,13 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               : post
           )
         );
+        
+        // Return the updated likes data
+        return response.data;
       }
     } catch (err) {
       console.error('Error liking/unliking post:', err);
+      throw err;
     }
   };
 
