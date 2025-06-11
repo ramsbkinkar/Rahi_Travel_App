@@ -260,6 +260,20 @@ class ApiClient {
     }
   }
 
+  async deletePost(postId: number): Promise<{ status: string; message?: string }> {
+    try {
+      const user_id = parseInt(localStorage.getItem('authToken') || '0');
+      const response: AxiosResponse<{ status: string; message?: string }> = await axiosInstance.delete(
+        `/posts/${postId}`, 
+        { data: { user_id } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Failed to delete post ${postId}:`, error);
+      throw error;
+    }
+  }
+
   // User profile methods
   async getUserProfile(userId: number): Promise<UserProfileResponse> {
     try {

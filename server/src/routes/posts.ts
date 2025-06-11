@@ -414,4 +414,49 @@ router.get('/:id/liked', async (req: Request, res: Response) => {
   }
 });
 
+// Delete a post
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const { user_id } = req.body;
+    
+    if (!user_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User ID is required'
+      });
+    }
+    
+    // Check if post exists and belongs to the user
+    const post = await dbAsync.get('SELECT id, user_id FROM posts WHERE id = ?', [postId]);
+    if (!post) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Post not found'
+      });
+    }
+    
+    if (post.user_id !== user_id) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'You can only delete your own posts'
+      });
+    }
+    
+    // Delete the post (this will cascade delete likes, comments, and tags)
+    await dbAsync.run('DELETE FROM posts WHERE id = ?', [postId]);
+    
+    res.json({
+      status: 'success',
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ 
+      status: 'error',
+      message: 'Server error' 
+    });
+  }
+});
+
 export default router; 
