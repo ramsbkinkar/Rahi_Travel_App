@@ -10,7 +10,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - cd $CODEBUILD_SRC_DIR
+        - cd $CODEBUILD_SRC_DIR/Rahi_Travel_App
         - pwd
         - ls -la
         - echo "Checking for package files..."
@@ -18,7 +18,7 @@ frontend:
         - npm ci
     build:
       commands:
-        - cd $CODEBUILD_SRC_DIR
+        - cd $CODEBUILD_SRC_DIR/Rahi_Travel_App
         - echo "Current directory:"
         - pwd
         - echo "Files in directory:"
