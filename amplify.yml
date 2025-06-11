@@ -11,6 +11,10 @@ frontend:
     preBuild:
       commands:
         - cd $CODEBUILD_SRC_DIR
+        - pwd
+        - ls -la
+        - echo "Checking for package files..."
+        - ls -la package*
         - npm ci
     build:
       commands:
