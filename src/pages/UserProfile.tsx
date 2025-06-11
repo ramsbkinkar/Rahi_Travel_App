@@ -170,7 +170,7 @@ const UserProfile: React.FC = () => {
             const updateResponse = await apiClient.updateUserProfile(Number(id), bio, uploadResponse.data.image_url);
             
             if (updateResponse.status === 'success' && updateResponse.data) {
-              setUser(prev => prev ? { ...prev, avatar_url: uploadResponse.data!.image_url } : null);
+              setUser(updateResponse.data);
               
               toast({
                 title: 'Success',

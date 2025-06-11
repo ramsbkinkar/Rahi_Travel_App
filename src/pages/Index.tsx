@@ -79,12 +79,16 @@ const Index: React.FC = () => {
               Your smart travel companion for creating unforgettable journeys across India.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" variant="default">
-                Explore Packages
-              </Button>
-              <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/20">
-                Create Scrapbook
-              </Button>
+              <Link to="/travel-packages">
+                <Button size="lg" variant="default">
+                  Explore Packages
+                </Button>
+              </Link>
+              <Link to="/scrapbook">
+                <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/20">
+                  Create Scrapbook
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

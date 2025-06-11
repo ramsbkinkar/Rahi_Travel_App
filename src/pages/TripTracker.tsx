@@ -343,38 +343,7 @@ const TripTracker: React.FC = () => {
         </div>
       </section>
       
-      {/* Beta Signup */}
-      <section className="py-16 bg-[#E6F0FF]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Join the Beta Program</h2>
-            <p className="text-gray-600 mb-8">
-              Be among the first to try our Trip Tracker feature. Sign up for our beta program and help us make it even better before the official launch.
-            </p>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <form onSubmit={handleNotify} className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <Input 
-                    type="email" 
-                    placeholder="Your email address" 
-                    className="w-full"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                  Join Beta Program
-                </Button>
-              </form>
-              <p className="text-xs text-gray-500 mt-4">
-                We'll never share your email with anyone else. You can unsubscribe at any time.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+
       
       {/* Similar Features Section */}
       <section className="py-12">
