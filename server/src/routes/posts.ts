@@ -4,6 +4,7 @@ import { dbAsync } from '../config/db';
 import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import { saveBase64Image } from '../utils/fileUpload';
 
 const router = Router();
 
@@ -11,7 +12,8 @@ const router = Router();
 const createPostSchema = z.object({
   caption: z.string().optional(),
   location: z.string().optional(),
-  image_url: z.string(), // URL to image
+  image_url: z.string().optional(), // URL to image (for backward compatibility)
+  imageBase64: z.string().optional(), // Base64 image data
   tags: z.array(z.string()).optional(),
   user_id: z.number() // TODO: Get from auth middleware
 });
@@ -121,12 +123,26 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create a new post
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { caption, location, image_url, tags, user_id } = createPostSchema.parse(req.body);
+    const { caption, location, image_url, imageBase64, tags, user_id } = createPostSchema.parse(req.body);
+    
+    // Handle image - either from URL or base64
+    let finalImageUrl = image_url;
+    if (imageBase64 && !image_url) {
+      // Save base64 image and get URL
+      finalImageUrl = saveBase64Image(imageBase64, 'posts');
+    }
+    
+    if (!finalImageUrl) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Either image_url or imageBase64 is required'
+      });
+    }
     
     // Create post
     const result = await dbAsync.run(
       'INSERT INTO posts (user_id, caption, location, image_url) VALUES (?, ?, ?, ?)',
-      [user_id, caption || null, location || null, image_url]
+      [user_id, caption || null, location || null, finalImageUrl]
     );
     
     const postId = result.lastID;

@@ -207,24 +207,13 @@ class ApiClient {
     tags: string[]
   ): Promise<PostResponse> {
     try {
-      // First upload the image
-      const uploadResponse: AxiosResponse<any> = await axiosInstance.post('/uploads/image', {
-        image: imageBase64,
-        folder: 'posts'
-      });
-
-      if (uploadResponse.data.status !== 'success') {
-        throw new Error('Failed to upload image');
-      }
-
-      const image_url = uploadResponse.data.data.image_url;
       const user_id = parseInt(localStorage.getItem('authToken') || '0');
 
-      // Then create the post with the image URL
+      // Create the post with base64 image data
       const response: AxiosResponse<PostResponse> = await axiosInstance.post('/posts', {
         caption,
         location,
-        image_url,
+        imageBase64,
         tags,
         user_id
       });

@@ -10,11 +10,11 @@ import React, { Suspense } from "react";
 import Index from "./pages/Index";
 import TravelPackages from "./pages/TravelPackages";
 import PackageDetails from "./pages/PackageDetails";
+import UserProfile from "./pages/UserProfile";
 import ExploreIndia from "./pages/ExploreIndia";
 import CityDetails from "./pages/CityDetails";
 import Scrapbook from "./pages/Scrapbook";
 import SocialFeed from "./pages/SocialFeed";
-import UserProfile from "./pages/UserProfile";
 import TripTracker from "./pages/TripTracker";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
@@ -45,6 +45,7 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/travel-packages" element={<TravelPackages />} />
                     <Route path="/travel-packages/:id" element={<PackageDetails />} />
+                    <Route path="/profile/:id" element={<UserProfile />} />
                     <Route path="/explore-india" element={<ExploreIndia />} />
                     <Route path="/explore-india/:citySlug" element={<CityDetails />} />
                     <Route 
@@ -55,22 +56,7 @@ const App = () => {
                         </ProtectedRoute>
                       } 
                     />
-                    <Route 
-                      path="/social-feed" 
-                      element={
-                        <ProtectedRoute>
-                          <SocialFeed />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="/profile/:id" 
-                      element={
-                        <ProtectedRoute>
-                          <UserProfile />
-                        </ProtectedRoute>
-                      } 
-                    />
+                    <Route path="/social-feed" element={<SocialFeed />} />
                     <Route 
                       path="/trip-tracker" 
                       element={
