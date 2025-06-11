@@ -10,11 +10,15 @@ frontend:
   phases:
     preBuild:
       commands:
+        - cd $CODEBUILD_SRC_DIR
         - npm ci
     build:
       commands:
+        - cd $CODEBUILD_SRC_DIR
         - echo "Current directory:"
         - pwd
+        - echo "Files in directory:"
+        - ls -la
         - echo "Running frontend build..."
         - npx vite build
   artifacts:
