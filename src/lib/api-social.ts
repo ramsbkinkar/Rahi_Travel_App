@@ -1,5 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? '/api' : 'http://localhost:3000/api');
+const API_BASE_URL = import.meta.env.PROD 
+  ? 'http://98.81.228.187:3000/api' 
+  : 'http://localhost:3000/api';
 
 export interface User {
   id: number;
