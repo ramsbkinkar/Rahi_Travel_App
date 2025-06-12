@@ -1,29 +1,23 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        - cd server
-        - npm ci
-        - npm run build
-        - echo "Backend built successfully"
 frontend:
   phases:
     preBuild:
       commands:
         - npm ci
-        - echo "Frontend dependencies installed"
+        - cd server && npm ci && cd ..
+        - echo "Dependencies installed"
     build:
       commands:
         - echo "Building frontend..."
         - npm run build
-        - echo "Frontend built successfully"
-        - echo "Copying server files to dist..."
-        - cp -r server/dist ./dist/server
-        - cp -r server/node_modules ./dist/server/
-        - cp -r server/data ./dist/server/ || mkdir -p ./dist/server/data
-        - cp server/package.json ./dist/server/
-        - echo "Server files copied to dist"
+        - echo "Building backend..."
+        - cd server && npm run build && cd ..
+        - echo "Setting up production structure..."
+        - cp -r server/dist ./dist/api
+        - cp -r server/node_modules ./dist/api/
+        - cp -r server/data ./dist/api/ || mkdir -p ./dist/api/data
+        - cp server/package.json ./dist/api/
+        - echo "Build completed successfully"
   artifacts:
     baseDirectory: dist
     files:

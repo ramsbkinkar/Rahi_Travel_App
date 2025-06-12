@@ -6,12 +6,13 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // Start the backend server
-const backendPath = path.join(__dirname, 'server', 'index.js');
+const backendPath = path.join(__dirname, 'api', 'index.js');
 console.log('Starting backend server from:', backendPath);
 
 const backend = spawn('node', [backendPath], {
   env: { ...process.env, NODE_ENV: 'production', PORT: 3000 },
-  stdio: 'inherit'
+  stdio: 'inherit',
+  cwd: path.join(__dirname, 'api')
 });
 
 backend.on('error', (err) => {
