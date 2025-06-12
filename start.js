@@ -1,30 +1,41 @@
-const { spawn } = require('child_process');
+const express = require('express');
 const path = require('path');
+const { spawn } = require('child_process');
 
-// Set environment to production
-process.env.NODE_ENV = 'production';
+const app = express();
+const PORT = process.env.PORT || 8080;
 
-// Start the server
-const serverPath = path.join(__dirname, 'server', 'dist', 'index.js');
-const server = spawn('node', [serverPath], {
-  stdio: 'inherit',
-  env: { ...process.env, NODE_ENV: 'production' }
+// Start the backend server
+const backendPath = path.join(__dirname, 'server', 'index.js');
+console.log('Starting backend server from:', backendPath);
+
+const backend = spawn('node', [backendPath], {
+  env: { ...process.env, NODE_ENV: 'production', PORT: 3000 },
+  stdio: 'inherit'
 });
 
-server.on('error', (err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+backend.on('error', (err) => {
+  console.error('Failed to start backend:', err);
 });
 
-server.on('close', (code) => {
-  console.log(`Server process exited with code ${code}`);
-  process.exit(code);
+// Serve static files from dist
+app.use(express.static(path.join(__dirname)));
+
+// Proxy API requests to backend
+app.use('/api', (req, res) => {
+  const backendUrl = `http://localhost:3000${req.originalUrl}`;
+  console.log('Proxying request to:', backendUrl);
+  
+  // Simple proxy - in production you'd use http-proxy-middleware
+  res.redirect(307, backendUrl);
 });
 
-process.on('SIGTERM', () => {
-  server.kill('SIGTERM');
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-process.on('SIGINT', () => {
-  server.kill('SIGINT');
+app.listen(PORT, () => {
+  console.log(`Frontend server running on port ${PORT}`);
+  console.log('Backend server should be running on port 3000');
 }); 

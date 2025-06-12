@@ -6,25 +6,24 @@ backend:
         - cd server
         - npm ci
         - npm run build
+        - echo "Backend built successfully"
 frontend:
   phases:
     preBuild:
       commands:
-        - cd $CODEBUILD_SRC_DIR/Rahi_Travel_App
-        - pwd
-        - ls -la
-        - echo "Checking for package files..."
-        - ls -la package*
         - npm ci
+        - echo "Frontend dependencies installed"
     build:
       commands:
-        - cd $CODEBUILD_SRC_DIR/Rahi_Travel_App
-        - echo "Current directory:"
-        - pwd
-        - echo "Files in directory:"
-        - ls -la
-        - echo "Running frontend build..."
-        - npx vite build
+        - echo "Building frontend..."
+        - npm run build
+        - echo "Frontend built successfully"
+        - echo "Copying server files to dist..."
+        - cp -r server/dist ./dist/server
+        - cp -r server/node_modules ./dist/server/
+        - cp -r server/data ./dist/server/ || mkdir -p ./dist/server/data
+        - cp server/package.json ./dist/server/
+        - echo "Server files copied to dist"
   artifacts:
     baseDirectory: dist
     files:
