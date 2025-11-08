@@ -5,6 +5,7 @@ import authRoutes from './routes/auth';
 import postRoutes from './routes/posts';
 import uploadRoutes from './routes/uploads';
 import userRoutes from './routes/users';
+import scrapbookRoutes from './routes/scrapbooks';
 import initializeDatabase from './db/init';
 import { createTestUsers } from './db/create-user';
 import path from 'path';
@@ -62,6 +63,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/scrapbooks', scrapbookRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

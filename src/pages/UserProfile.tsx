@@ -5,6 +5,15 @@ import { apiClient, Post, User } from '@/integration/api/client';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import SocialPost from '@/components/SocialPost';
+import Layout1 from '@/scrapbookTemplates/Layout1';
+import Layout2 from '@/scrapbookTemplates/Layout2';
+import { themes } from '@/utils/themes';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectCreative, Pagination, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/effect-creative';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 import {
   Calendar,
   Edit,
@@ -27,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
+import { getScrapbookById } from '@/lib/scrapbookUtils';
 import { useToast } from '@/hooks/use-toast';
 
 const UserProfile: React.FC = () => {
@@ -52,6 +62,9 @@ const UserProfile: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [scrapbooks, setScrapbooks] = useState<Array<{ id: number; preview: string | null; title: string; createdAt: string; theme: string }>>([]);
+  const [openScrapbookId, setOpenScrapbookId] = useState<string | null>(null);
+  const [openScrapbookData, setOpenScrapbookData] = useState<any>(null);
   
   const isOwnProfile = currentUser?.id === Number(id);
   
@@ -88,6 +101,95 @@ const UserProfile: React.FC = () => {
       fetchProfile();
     }
   }, [id, toast]);
+
+  // Load user scrapbooks from localStorage
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      try {
+        const resp = await apiClient.listScrapbooks(Number(id));
+        if (resp.status === 'success' && Array.isArray(resp.data)) {
+          const mapped = resp.data.map((r: any) => ({
+            id: r.id as number,
+            preview: r.preview_image_url as string | null,
+            title: r.title as string,
+            createdAt: r.created_at as string,
+            theme: r.theme as string
+          }));
+          setScrapbooks(mapped);
+        }
+      } catch {
+        // fallback to local cache
+        const items: Array<{ id: number; preview: string | null; title: string; createdAt: string; theme: string }> = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`scrapbook_u${id}_`)) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key) || '{}');
+              if (data?.previewDataUrl) items.push({
+                id: data.id,
+                preview: data.previewDataUrl,
+                title: data.title,
+                createdAt: data.createdAt,
+                theme: data.theme
+              });
+            } catch { /* ignore */ }
+          }
+        }
+        items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setScrapbooks(items);
+      }
+    };
+    load();
+  }, [id]);
+
+  // Load a single scrapbook when the dialog opens
+  useEffect(() => {
+    const load = async () => {
+      if (!openScrapbookId) return;
+      try {
+        const resp = await apiClient.getScrapbook(Number(openScrapbookId));
+        if (resp.status === 'success' && resp.data) {
+          setOpenScrapbookData(resp.data);
+          return;
+        }
+      } catch {
+        // ignore and try local fallback
+      }
+      const local = getScrapbookById(openScrapbookId);
+      if (local) setOpenScrapbookData(local);
+    };
+    load();
+  }, [openScrapbookId]);
+
+  // Live refresh when scrapbook is saved elsewhere
+  useEffect(() => {
+    const handler = () => {
+      if (!id) return;
+      const items: Array<{ id: number; preview: string | null; title: string; createdAt: string; theme: string }> = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`scrapbook_u${id}_`)) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data?.previewDataUrl) items.push({
+              id: data.id,
+              preview: data.previewDataUrl,
+              title: data.title,
+              createdAt: data.createdAt,
+              theme: data.theme
+            });
+          } catch {
+            // ignore
+          }
+        }
+      }
+      items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setScrapbooks(items);
+    };
+    window.addEventListener('scrapbook:saved', handler as EventListener);
+    return () => window.removeEventListener('scrapbook:saved', handler as EventListener);
+  }, [id]);
   
   // Load more posts
   const handleLoadMore = async () => {
@@ -350,6 +452,34 @@ const UserProfile: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Scrapbooks Section */}
+      <section className="pb-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-xl font-bold mb-4">Scrapbooks</h2>
+            {scrapbooks.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {scrapbooks.map(sb => (
+                  <button
+                    key={sb.id}
+                    className="bg-white rounded-lg shadow overflow-hidden text-left"
+                    onClick={() => navigate(`/scrapbook/view/${sb.id}`)}
+                  >
+                    <img src={sb.preview ? `http://localhost:3000${sb.preview}` : ''} alt={sb.title} className="w-full aspect-[4/3] object-cover" />
+                    <div className="p-3">
+                      <div className="text-sm font-semibold truncate">{sb.title}</div>
+                      <div className="text-xs text-gray-500">{new Date(sb.createdAt).toLocaleString()}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white p-6 rounded-lg text-center text-gray-500">No scrapbooks yet.</div>
+            )}
           </div>
         </div>
       </section>
@@ -617,6 +747,81 @@ const UserProfile: React.FC = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scrapbook Viewer Dialog */}
+      <Dialog open={!!openScrapbookId} onOpenChange={() => { setOpenScrapbookId(null); setOpenScrapbookData(null); }}>
+        <DialogContent className="max-w-5xl w-full">
+          {openScrapbookId && (() => {
+            const renderBook = (useData: any) => {
+              if (!useData || !useData.images || useData.images.length === 0) {
+                return <div className="text-center p-6">This scrapbook has no pages.</div>;
+              }
+              const themeKey = (useData.theme as keyof typeof themes) || 'beach';
+              const slides: Array<{ layout: 'two' | 'three'; images: string[]; captions: string[] }> = [];
+              let idx = 0, pageIndex = 0;
+              while (idx < useData.images.length) {
+                const layout: 'two' | 'three' = pageIndex % 2 === 0 ? 'two' : 'three';
+                const take = layout === 'two' ? 2 : 3;
+                slides.push({
+                  layout,
+                  images: useData.images.slice(idx, idx + take).map((u: string) => u.startsWith('http') ? u : `http://localhost:3000${u}`),
+                  captions: (useData.captions || []).slice(idx, idx + take),
+                });
+                idx += take;
+                pageIndex += 1;
+              }
+              return (
+                <div className="w-full">
+                  <Swiper
+                    effect="creative"
+                    creativeEffect={{
+                      prev: { shadow: true, translate: ['-120%', 0, -500], rotate: [0, 0, -90] },
+                      next: { shadow: true, translate: ['120%', 0, -500], rotate: [0, 0, 90] },
+                    }}
+                    grabCursor
+                    modules={[EffectCreative, Pagination, Navigation]}
+                    className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow"
+                    pagination={{ clickable: true }}
+                    navigation
+                  >
+                    <SwiperSlide className="bg-white rounded-lg shadow-xl">
+                      <div className={`w-full h-full flex items-center justify-center ${themes[themeKey].bgColor} ${themes[themeKey].pattern}`}>
+                        <h2 className={`text-3xl md:text-4xl ${themes[themeKey].textColor} font-display italic`}>
+                          {useData.title}
+                        </h2>
+                      </div>
+                    </SwiperSlide>
+                    {slides.map((s, i) => {
+                      const Layout = s.layout === 'two' ? Layout1 : Layout2;
+                      return (
+                        <SwiperSlide key={i} className="bg-white rounded-lg shadow-xl">
+                          <Layout
+                            image1={s.images[0]}
+                            image2={s.images[1]}
+                            // @ts-expect-error Layout2 image3
+                            image3={s.layout === 'two' ? undefined : s.images[2]}
+                            caption1={s.captions[0]}
+                            // @ts-expect-error Layout1 caption2
+                            caption2={s.layout === 'two' ? s.captions[1] : undefined}
+                            // @ts-expect-error theme accepts ThemeKey
+                            theme={themeKey}
+                            stickers={[]}
+                          />
+                        </SwiperSlide>
+                      );
+                    })}
+                  </Swiper>
+                </div>
+              );
+            };
+
+            if (!openScrapbookData) {
+              return <div className="p-6 text-center text-gray-500">Loading scrapbook…</div>;
+            }
+            return renderBook(openScrapbookData);
+          })()}
         </DialogContent>
       </Dialog>
 

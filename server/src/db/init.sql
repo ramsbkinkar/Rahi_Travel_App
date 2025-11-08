@@ -75,3 +75,18 @@ CREATE TABLE IF NOT EXISTS likes (
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 ); 
+
+-- Create scrapbooks table for persistent scrapbook storage
+CREATE TABLE IF NOT EXISTS scrapbooks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    theme TEXT NOT NULL,
+    pages_count INTEGER DEFAULT 0,
+    preview_image_url TEXT,
+    images_json TEXT NOT NULL,        -- JSON array of image URLs (strings)
+    captions_json TEXT NOT NULL,      -- JSON array of captions (strings)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

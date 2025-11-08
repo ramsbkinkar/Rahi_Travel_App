@@ -18,6 +18,10 @@ import 'swiper/css/effect-creative';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import './Scrapbook.css';
+import { useAuth } from '@/contexts/AuthContext';
+import { saveScrapbookForUser } from '@/lib/scrapbookUtils';
+import { useEffect } from 'react';
+import { apiClient } from '@/integration/api/client';
 
 type SlideSpec = {
   layout: 'two' | 'three';
@@ -29,12 +33,15 @@ type SlideSpec = {
 const MAX_IMAGES = 12;
 
 const Scrapbook: React.FC = () => {
+  const { user } = useAuth();
   const [selectedTheme, setSelectedTheme] = useState<ThemeKey>('beach');
+  const [title, setTitle] = useState<string>('My Travel Memories');
   const [images, setImages] = useState<string[]>([]);
   const [captions, setCaptions] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(true);
   const [pageStickers, setPageStickers] = useState<Record<number, RandomSticker[]>>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const draftKey = user ? `scrapbook_draft_${user.id}` : null;
 
   const slides: SlideSpec[] = useMemo(() => {
     const result: SlideSpec[] = [];
@@ -52,6 +59,67 @@ const Scrapbook: React.FC = () => {
     }
     return result;
   }, [images, captions, pageStickers]);
+
+  const compressDataUrl = (dataUrl: string, maxDim = 1400, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        const targetW = Math.max(1, Math.round(width * scale));
+        const targetH = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        try {
+          const out = canvas.toDataURL('image/jpeg', quality);
+          resolve(out || dataUrl);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
+  // Load draft on mount for the current user
+  useEffect(() => {
+    if (!user || !draftKey) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.images)) setImages(data.images);
+        if (Array.isArray(data.captions)) setCaptions(data.captions);
+        if (data.theme) setSelectedTheme(data.theme);
+        if (data.pageStickers) setPageStickers(data.pageStickers);
+        if (typeof data.isEditing === 'boolean') setIsEditing(data.isEditing);
+      }
+    } catch {
+      // ignore malformed drafts
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persist draft automatically when editing changes
+  useEffect(() => {
+    if (!user || !draftKey) return;
+    const payload = JSON.stringify({
+      captions, // keep captions only to reduce storage footprint
+      theme: selectedTheme,
+      isEditing,
+      title,
+    });
+    try {
+      localStorage.setItem(draftKey, payload);
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [images, captions, selectedTheme, pageStickers, isEditing, draftKey, user]);
 
   const handleUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -116,6 +184,28 @@ const Scrapbook: React.FC = () => {
     setPageStickers(stickersByPage);
     setIsEditing(false);
     toast.success('Scrapbook created!');
+    // Auto-save a thumbnail to profile as a draft preview
+    setTimeout(async () => {
+      if (!user || !containerRef.current) return;
+      try {
+        const canvas = await html2canvas(containerRef.current, { backgroundColor: null, scale: 1.25 });
+        const dataUrl = canvas.toDataURL('image/png');
+        const compressedImages = await Promise.all(images.map((i) => compressDataUrl(i)));
+        const saved = saveScrapbookForUser(user.id, {
+          title: title || 'My Travel Memories',
+          theme: selectedTheme,
+          pages: slides.length,
+          previewDataUrl: dataUrl,
+          images: compressedImages,
+          captions,
+        });
+        if (saved) {
+          window.dispatchEvent(new CustomEvent('scrapbook:saved', { detail: saved }));
+        }
+      } catch {
+        // ignore preview failures
+      }
+    }, 0);
   };
 
   const reEdit = () => {
@@ -136,6 +226,50 @@ const Scrapbook: React.FC = () => {
     }
   };
 
+  const saveToProfile = async () => {
+    if (!user) {
+      toast.error('Please sign in to save to your profile.');
+      return;
+    }
+    if (!containerRef.current) return;
+    try {
+      const canvas = await html2canvas(containerRef.current, { backgroundColor: null, scale: 1.5 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const slidesCount = slides.length;
+      const compressedImages = await Promise.all(images.map((i) => compressDataUrl(i)));
+      // Persist to backend
+      let remoteOk = false;
+      try {
+        const resp = await apiClient.createScrapbook({
+          title: title || 'My Travel Memories',
+          theme: selectedTheme,
+          images: compressedImages,
+          captions,
+        });
+        if (resp?.status === 'success') remoteOk = true;
+      } catch (e) {
+        console.error('Backend scrapbook save failed, will fallback to local storage.', e);
+      }
+      // Fallback local save for offline support and instant UI
+      const saved = saveScrapbookForUser(user.id, {
+        title: title || 'My Travel Memories',
+        theme: selectedTheme,
+        pages: slidesCount,
+        previewDataUrl: dataUrl,
+        images: compressedImages,
+        captions,
+      });
+      if (remoteOk || saved) {
+        toast.success('Saved to your profile!');
+        window.dispatchEvent(new CustomEvent('scrapbook:saved', { detail: saved }));
+      } else {
+        toast.error('Failed to save scrapbook.');
+      }
+    } catch {
+      toast.error('Failed to capture scrapbook.');
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <NavBar />
@@ -151,6 +285,16 @@ const Scrapbook: React.FC = () => {
             {/* Upload + Theme */}
             <Card className="lg:col-span-1">
               <CardContent className="p-5 space-y-5">
+                <div className="space-y-2">
+                  <Label className="font-medium">Scrapbook Title</Label>
+                  <Input
+                    type="text"
+                    placeholder="Enter a title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label className="font-medium">Upload Photos (max {MAX_IMAGES})</Label>
                   <Input
@@ -207,6 +351,9 @@ const Scrapbook: React.FC = () => {
                         <FaDownload className="mr-2" />
                         Download PNG
                       </Button>
+                      <Button variant="outline" className="w-full" onClick={saveToProfile}>
+                        Save to Profile
+                      </Button>
                     </>
                   )}
                 </div>
@@ -240,7 +387,7 @@ const Scrapbook: React.FC = () => {
 
           {/* Preview */}
           {!isEditing && slides.length > 0 && (
-            <div ref={containerRef} className="w-full">
+            <div ref={containerRef} className="w-full max-w-3xl md:max-w-4xl mx-auto">
               <Swiper
                 effect="creative"
                 creativeEffect={{
@@ -249,7 +396,7 @@ const Scrapbook: React.FC = () => {
                 }}
                 grabCursor
                 modules={[EffectCreative, Pagination, Navigation]}
-                className="w-full aspect-[3/2] rounded-lg overflow-hidden bg-white shadow"
+                className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-lg"
                 pagination={{ clickable: true }}
                 navigation
               >
@@ -259,7 +406,7 @@ const Scrapbook: React.FC = () => {
                     className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
                   >
                     <h2 className={`text-4xl ${themes[selectedTheme].textColor} font-display italic`}>
-                      My Travel Memories
+                      {title || 'My Travel Memories'}
                     </h2>
                   </div>
                 </SwiperSlide>

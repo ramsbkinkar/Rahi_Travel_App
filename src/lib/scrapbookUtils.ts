@@ -91,3 +91,64 @@ export const getSavedScrapbooks = () => {
   }
   return scrapbooks;
 }; 
+
+// User-scoped helpers
+export interface SavedScrapbook {
+  id: string;
+  title: string;
+  theme: string;
+  createdAt: string;
+  pages: number;
+  previewDataUrl: string; // PNG data URL
+}
+
+export interface FullSavedScrapbook extends SavedScrapbook {
+  images?: string[];
+  captions?: string[];
+}
+
+export const saveScrapbookForUser = (
+  userId: number,
+  scrapbook: Omit<SavedScrapbook, 'id' | 'createdAt'> & { images?: string[]; captions?: string[] }
+) => {
+  try {
+    const id = `scrapbook_u${userId}_${Date.now()}`;
+    const payload: FullSavedScrapbook = {
+      id,
+      createdAt: new Date().toISOString(),
+      ...scrapbook,
+    };
+    localStorage.setItem(id, JSON.stringify(payload));
+    return payload;
+  } catch (err) {
+    console.error('Failed to save scrapbook for user:', err);
+    return null;
+  }
+};
+
+export const getUserScrapbooks = (userId: number): SavedScrapbook[] => {
+  const list: SavedScrapbook[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(`scrapbook_u${userId}_`)) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '') as FullSavedScrapbook;
+        list.push(data);
+      } catch {
+        // ignore bad entries
+      }
+    }
+  }
+  // newest first
+  return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+};
+
+export const getScrapbookById = (id: string): FullSavedScrapbook | null => {
+  try {
+    const raw = localStorage.getItem(id);
+    if (!raw) return null;
+    return JSON.parse(raw) as FullSavedScrapbook;
+  } catch {
+    return null;
+  }
+};

@@ -18,6 +18,7 @@ import SocialFeed from "./pages/SocialFeed";
 import TripTracker from "./pages/TripTracker";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
+import ScrapbookView from "./pages/ScrapbookView";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
@@ -62,6 +63,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <TripTracker />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/scrapbook/view/:id" 
+                      element={
+                        <ProtectedRoute>
+                          <ScrapbookView />
                         </ProtectedRoute>
                       } 
                     />

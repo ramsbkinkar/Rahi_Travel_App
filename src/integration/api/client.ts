@@ -343,6 +343,23 @@ class ApiClient {
       throw error;
     }
   }
+
+  // Scrapbooks
+  async createScrapbook(payload: { title: string; theme: string; images: string[]; captions: string[] }): Promise<any> {
+    const user_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post('/scrapbooks', { user_id, ...payload });
+    return response.data;
+  }
+
+  async listScrapbooks(userId: number): Promise<any> {
+    const response = await axiosInstance.get(`/scrapbooks/${userId}`);
+    return response.data;
+  }
+
+  async getScrapbook(id: number): Promise<any> {
+    const response = await axiosInstance.get(`/scrapbooks/id/${id}`);
+    return response.data;
+  }
 }
 
 // Export a singleton instance
