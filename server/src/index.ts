@@ -6,9 +6,11 @@ import postRoutes from './routes/posts';
 import uploadRoutes from './routes/uploads';
 import userRoutes from './routes/users';
 import scrapbookRoutes from './routes/scrapbooks';
+import tripRoutes from './routes/trips';
 import initializeDatabase from './db/init';
 import { createTestUsers } from './db/create-user';
 import path from 'path';
+
 
 dotenv.config();
 
@@ -64,6 +66,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/scrapbooks', scrapbookRoutes);
+app.use('/api/trips', tripRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

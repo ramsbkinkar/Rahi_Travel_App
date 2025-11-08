@@ -381,7 +381,12 @@ const UserProfile: React.FC = () => {
               {/* Avatar */}
               <div className="relative">
                 <Avatar className="w-24 h-24 md:w-32 md:h-32">
-                  <AvatarImage src={user.avatar_url || `https://i.pravatar.cc/150?u=${user.id}`} />
+                  <AvatarImage 
+                    src={user.avatar_url 
+                      ? (user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:3000${user.avatar_url}`)
+                      : `https://i.pravatar.cc/150?u=${user.id}`
+                    } 
+                  />
                   <AvatarFallback className="text-2xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 

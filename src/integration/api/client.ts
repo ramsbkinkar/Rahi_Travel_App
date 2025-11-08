@@ -360,6 +360,36 @@ class ApiClient {
     const response = await axiosInstance.get(`/scrapbooks/id/${id}`);
     return response.data;
   }
+
+  // Trip tracker
+  async createTrip(name: string): Promise<any> {
+    const owner_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post('/trips', { owner_id, name });
+    return response.data;
+  }
+
+  async joinTrip(tripId: number, token: string): Promise<any> {
+    const user_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post(`/trips/${tripId}/join`, { user_id, token });
+    return response.data;
+  }
+
+  async postLocation(tripId: number, payload: { lat: number; lng: number; accuracy?: number; heading?: number; speed?: number }): Promise<any> {
+    const user_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post(`/trips/${tripId}/locations`, { user_id, ...payload });
+    return response.data;
+  }
+
+  async getLocations(tripId: number, since?: string): Promise<any> {
+    const response = await axiosInstance.get(`/trips/${tripId}/locations`, { params: { since } });
+    return response.data;
+  }
+
+  async triggerSOS(tripId: number, payload: { lat: number; lng: number; note?: string }): Promise<any> {
+    const user_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post(`/trips/${tripId}/sos`, { user_id, ...payload });
+    return response.data;
+  }
 }
 
 // Export a singleton instance
