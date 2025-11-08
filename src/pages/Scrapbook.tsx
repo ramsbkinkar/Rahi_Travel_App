@@ -271,17 +271,22 @@ const Scrapbook: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50/40 via-white to-white bg-dots">
       <NavBar />
       <Toaster />
-      <section className="pt-28 pb-10">
+      <section className="pt-24 hero-gradient">
         <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Create Your <span className="text-orange-500">Scrapbook</span>
-          </h1>
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              Create Your <span className="text-orange-500">Scrapbook</span>
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Upload photos, pick a theme, and flip through animated pages.
+            </p>
+          </div>
 
           {/* Controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-10">
             {/* Upload + Theme */}
             <Card className="lg:col-span-1">
               <CardContent className="p-5 space-y-5">

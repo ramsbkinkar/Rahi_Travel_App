@@ -3,4 +3,15 @@
   height: 100%;
 }
 
+/* Subtle dotted paper background to enhance page aesthetics */
+.bg-dots {
+  background-image: radial-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Soft gradient hero under the navbar */
+.hero-gradient {
+  background-image: radial-gradient(ellipse at top, rgba(56, 189, 248, 0.18), transparent 60%);
+}
+
 
