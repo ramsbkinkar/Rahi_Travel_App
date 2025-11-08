@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sheet,
@@ -18,12 +18,15 @@ import { Menu, User } from 'lucide-react';
 import LoginSignup from './LoginSignup';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { apiClient } from '@/integration/api/client';
 
 const NavBar = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   const navigationLinks = [
     { to: "/", label: "Home" },
@@ -34,6 +37,31 @@ const NavBar = () => {
     { to: "/trip-tracker", label: "Trip Tracker" },
     { to: "/faq", label: "FAQ" }
   ];
+
+  // Load avatar for navbar if logged in
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) {
+        setAvatarUrl(undefined);
+        return;
+      }
+      try {
+        const resp = await apiClient.getUserProfile(user.id);
+        if (resp.status === 'success' && resp.data?.user) {
+          const a = resp.data.user.avatar_url;
+          if (a) {
+            setAvatarUrl(a.startsWith('http') ? a : `http://localhost:3000${a}`);
+          } else {
+            setAvatarUrl(undefined);
+          }
+        }
+      } catch {
+        // ignore; will fall back to initials/pravatar
+        setAvatarUrl(undefined);
+      }
+    };
+    load();
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     try {
@@ -87,12 +115,13 @@ const NavBar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2"
-                  >
-                    <User className="h-5 w-5" />
-                    <span>{user.name}</span>
+                  <Button variant="ghost" size="icon" className="rounded-full p-0 w-10 h-10">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={avatarUrl || (user?.id ? `https://i.pravatar.cc/150?u=${user.id}` : undefined)} />
+                      <AvatarFallback>
+                        {user?.name ? user.name.substring(0, 2).toUpperCase() : <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
