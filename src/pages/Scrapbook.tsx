@@ -1,241 +1,463 @@
-
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ScrapbookTemplate from '@/components/ScrapbookTemplate';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { themes, type ThemeKey, getRandomStickers, type RandomSticker, type DecorIntensity } from '@/utils/themes';
+import Layout1 from '@/scrapbookTemplates/Layout1';
+import Layout2 from '@/scrapbookTemplates/Layout2';
+import Layout3 from '@/scrapbookTemplates/Layout3';
+import Layout4 from '@/scrapbookTemplates/Layout4';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectCreative, Pagination, Navigation } from 'swiper/modules';
+import html2canvas from 'html2canvas';
+import toast, { Toaster } from 'react-hot-toast';
+import { FaCamera, FaDownload, FaTrash, FaPalette, FaEdit } from 'react-icons/fa';
+import 'swiper/css';
+import 'swiper/css/effect-creative';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+import './Scrapbook.css';
+import './ScrapbookBackgrounds.css';
+import { useAuth } from '@/contexts/AuthContext';
+import { saveScrapbookForUser } from '@/lib/scrapbookUtils';
+import { useEffect } from 'react';
+import { apiClient } from '@/integration/api/client';
+
+type SlideSpec = {
+  layout: number; // number of images expected on this page
+  images: string[];
+  stickers: RandomSticker[];
+};
+
+const MAX_IMAGES = 12;
 
 const Scrapbook: React.FC = () => {
-  const themes = [
-    {
-      id: "friends",
-      name: "Friends",
-      primaryColor: "blue-100",
-      secondaryColor: "blue-400",
-      templates: 5
-    },
-    {
-      id: "love",
-      name: "Love",
-      primaryColor: "pink-100",
-      secondaryColor: "pink-400", 
-      templates: 5
-    },
-    {
-      id: "beach",
-      name: "Beach",
-      primaryColor: "cyan-100",
-      secondaryColor: "cyan-400",
-      templates: 5
-    },
-    {
-      id: "honeymoon",
-      name: "Honeymoon",
-      primaryColor: "red-100",
-      secondaryColor: "red-400",
-      templates: 5
-    },
-    {
-      id: "mountains",
-      name: "Mountains",
-      primaryColor: "green-100",
-      secondaryColor: "green-400",
-      templates: 5
+  const { user } = useAuth();
+  const [selectedTheme, setSelectedTheme] = useState<ThemeKey>('beach');
+  const [title, setTitle] = useState<string>('My Travel Memories');
+  const [images, setImages] = useState<string[]>([]);
+  const [captions, setCaptions] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(true);
+  const [pageStickers, setPageStickers] = useState<Record<number, RandomSticker[]>>({});
+  const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>('decorative');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const draftKey = user ? `scrapbook_draft_${user.id}` : null;
+
+  const slides: SlideSpec[] = useMemo(() => {
+    const result: SlideSpec[] = [];
+    let idx = 0;
+    let pageIndex = 0;
+    const cycle = [2, 3, 4, 3]; // L1, L2, L3, L4
+    while (idx < images.length) {
+      const take = cycle[pageIndex % cycle.length];
+      const imgs = images.slice(idx, idx + take);
+      const stickers = pageStickers[pageIndex] || [];
+      result.push({ layout: take, images: imgs, stickers });
+      idx += take;
+      pageIndex += 1;
     }
-  ];
-  
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(5);
-  
-  const handleNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const handlePrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  const handleAddPage = () => {
-    setTotalPages(totalPages + 1);
-    setCurrentPage(totalPages);
+    return result;
+  }, [images, pageStickers]);
+
+  const compressDataUrl = (dataUrl: string, maxDim = 1400, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        const targetW = Math.max(1, Math.round(width * scale));
+        const targetH = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        try {
+          const out = canvas.toDataURL('image/jpeg', quality);
+          resolve(out || dataUrl);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
   };
 
-  const getPlaceholderImages = (themeId: string) => {
-    switch (themeId) {
-      case 'friends':
-        return [
-          "https://images.unsplash.com/photo-1543807535-eceef0bc6599",
-          "https://images.unsplash.com/photo-1506869640319-fe1a24fd76dc",
-          "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a",
-          "https://images.unsplash.com/photo-1529156069898-49953e39b3ac",
-          "", ""
-        ];
-      case 'love':
-        return [
-          "https://images.unsplash.com/photo-1518199266791-5375a83190b7",
-          "https://images.unsplash.com/photo-1523595876387-1d80c824796f",
-          "https://images.unsplash.com/photo-1516589091380-5d8e87df6999",
-          "", "", ""
-        ];
-      case 'beach':
-        return [
-          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-          "https://images.unsplash.com/photo-1473116763249-2faaef81ccda",
-          "https://images.unsplash.com/photo-1520454974749-611b7248ffdb",
-          "", "", ""
-        ];
-      case 'honeymoon':
-        return [
-          "https://images.unsplash.com/photo-1469371670807-013ccf25f16a",
-          "https://images.unsplash.com/photo-1470931071862-3e6252957944",
-          "https://images.unsplash.com/photo-1566828862655-e65f0f4c56e6",
-          "", "", ""
-        ];
-      case 'mountains':
-        return [
-          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-          "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b",
-          "https://images.unsplash.com/photo-1486870591958-9b9d0690989f",
-          "", "", ""
-        ];
-      default:
-        return ["", "", "", "", "", ""];
+  // Load draft on mount for the current user
+  useEffect(() => {
+    if (!user || !draftKey) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.images)) setImages(data.images);
+        if (Array.isArray(data.captions)) setCaptions(data.captions);
+        if (data.theme) setSelectedTheme(data.theme);
+        if (data.pageStickers) setPageStickers(data.pageStickers);
+        if (typeof data.isEditing === 'boolean') setIsEditing(data.isEditing);
+      }
+    } catch {
+      // ignore malformed drafts
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Persist draft automatically when editing changes
+  useEffect(() => {
+    if (!user || !draftKey) return;
+    const payload = JSON.stringify({
+      captions, // keep captions only to reduce storage footprint
+      theme: selectedTheme,
+      isEditing,
+      title,
+    });
+    try {
+      localStorage.setItem(draftKey, payload);
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [images, captions, selectedTheme, pageStickers, isEditing, draftKey, user]);
+
+  const handleUpload = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`You can upload up to ${MAX_IMAGES} photos.`);
+      return;
+    }
+    const toProcess = Array.from(files).slice(0, remaining);
+    const readers = toProcess.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) resolve(e.target.result as string);
+            else reject(new Error('Failed to read file'));
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        })
+    );
+    Promise.all(readers)
+      .then((base64s) => {
+        setImages((prev) => [...prev, ...base64s]);
+        setCaptions((prev) => [...prev, ...base64s.map(() => '')]);
+        toast.success(`Added ${base64s.length} photo(s)`);
+      })
+      .catch(() => toast.error('Failed to process images'));
+  };
+
+  const updateCaption = (index: number, value: string) => {
+    setCaptions((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const clearAll = () => {
+    setImages([]);
+    setCaptions([]);
+    setPageStickers({});
+    setIsEditing(true);
+  };
+
+  const createScrapbook = () => {
+    if (images.length === 0) {
+      toast.error('Please upload at least one photo.');
+      return;
+    }
+    // Pre-generate random stickers for each page
+    const stickersByPage: Record<number, RandomSticker[]> = {};
+    let pageIndex = 0;
+    let idx = 0;
+    while (idx < images.length) {
+      const mod = pageIndex % 4;
+      const take = mod === 0 ? 2 : mod === 1 ? 3 : mod === 2 ? 4 : 3;
+      const imgs = images.slice(idx, idx + take);
+      const base = getRandomStickers(selectedTheme, Math.min(3, imgs.length), decorIntensity);
+      stickersByPage[pageIndex] = base;
+      idx += take;
+      pageIndex += 1;
+    }
+    setPageStickers(stickersByPage);
+    setIsEditing(false);
+    toast.success('Scrapbook created!');
+    // Auto-save a thumbnail to profile as a draft preview
+    setTimeout(async () => {
+      if (!user || !containerRef.current) return;
+      try {
+        const canvas = await html2canvas(containerRef.current, { backgroundColor: null, scale: 1.25 });
+        const dataUrl = canvas.toDataURL('image/png');
+        const compressedImages = await Promise.all(images.map((i) => compressDataUrl(i)));
+        const saved = saveScrapbookForUser(user.id, {
+          title: title || 'My Travel Memories',
+          theme: selectedTheme,
+          pages: slides.length,
+          previewDataUrl: dataUrl,
+          images: compressedImages,
+          captions,
+        });
+        if (saved) {
+          window.dispatchEvent(new CustomEvent('scrapbook:saved', { detail: saved }));
+        }
+      } catch {
+        // ignore preview failures
+      }
+    }, 0);
+  };
+
+  const reEdit = () => {
+    setIsEditing(true);
+  };
+
+  const downloadCurrent = async () => {
+    if (!containerRef.current) return;
+    try {
+      const canvas = await html2canvas(containerRef.current, { backgroundColor: null, scale: 2 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `scrapbook-${selectedTheme}.png`;
+      link.click();
+    } catch (e) {
+      toast.error('Failed to generate image');
+    }
+  };
+
+  const saveToProfile = async () => {
+    if (!user) {
+      toast.error('Please sign in to save to your profile.');
+      return;
+    }
+    if (!containerRef.current) return;
+    try {
+      const canvas = await html2canvas(containerRef.current, { backgroundColor: null, scale: 1.5 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const slidesCount = slides.length;
+      const compressedImages = await Promise.all(images.map((i) => compressDataUrl(i)));
+      // Persist to backend
+      let remoteOk = false;
+      try {
+        const resp = await apiClient.createScrapbook({
+          title: title || 'My Travel Memories',
+          theme: selectedTheme,
+          images: compressedImages,
+          captions,
+        });
+        if (resp?.status === 'success') remoteOk = true;
+      } catch (e) {
+        console.error('Backend scrapbook save failed, will fallback to local storage.', e);
+      }
+      // Fallback local save for offline support and instant UI
+      const saved = saveScrapbookForUser(user.id, {
+        title: title || 'My Travel Memories',
+        theme: selectedTheme,
+        pages: slidesCount,
+        previewDataUrl: dataUrl,
+        images: compressedImages,
+        captions,
+      });
+      if (remoteOk || saved) {
+        toast.success('Saved to your profile!');
+        window.dispatchEvent(new CustomEvent('scrapbook:saved', { detail: saved }));
+      } else {
+        toast.error('Failed to save scrapbook.');
+      }
+    } catch {
+      toast.error('Failed to capture scrapbook.');
     }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50/40 via-white to-white bg-dots">
       <NavBar />
-      
-      {/* Hero Section */}
-      <section className="pt-28 pb-16 bg-gradient-to-br from-raahi-blue-light to-white">
+      <Toaster />
+      <section className="pt-24 hero-gradient">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Digital Scrapbook
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              Create Your <span className="text-orange-500">Scrapbook</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Create beautiful memories of your travels with our easy-to-use digital scrapbook templates.
+            <p className="mt-2 text-gray-600">
+              Upload photos, pick a theme, and flip through animated pages.
             </p>
           </div>
-        </div>
-      </section>
-      
-      {/* Scrapbook Editor */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <Tabs defaultValue="friends" className="space-y-8">
-            <div className="flex justify-center">
-              <TabsList>
-                {themes.map(theme => (
-                  <TabsTrigger key={theme.id} value={theme.id}>{theme.name}</TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-            
-            {themes.map(theme => (
-              <TabsContent key={theme.id} value={theme.id}>
-                <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
-                  {/* Page Navigation */}
-                  <div className="flex justify-between items-center mb-8">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePrevPage}
-                      disabled={currentPage === 0}
-                    >
-                      <ChevronLeft size={18} className="mr-1" /> Previous Page
-                    </Button>
-                    
-                    <div className="text-center">
-                      <span className="text-lg font-medium">Page {currentPage + 1} of {totalPages}</span>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleAddPage}
-                      >
-                        <Plus size={18} className="mr-1" /> Add Page
+
+          {/* Controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-10">
+            {/* Upload + Theme */}
+            <Card className="lg:col-span-1">
+              <CardContent className="p-5 space-y-5">
+                <div className="space-y-2">
+                  <Label className="font-medium">Scrapbook Title</Label>
+                  <Input
+                    type="text"
+                    placeholder="Enter a title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-medium">Upload Photos (max {MAX_IMAGES})</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleUpload(e.target.files)}
+                  />
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <FaCamera />
+                    <span>{images.length} selected</span>
+                    {images.length > 0 && (
+                      <Button variant="ghost" className="text-red-600 ml-auto" onClick={clearAll}>
+                        <FaTrash className="mr-2" />
+                        Clear
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={handleNextPage}
-                        disabled={currentPage === totalPages - 1}
-                      >
-                        Next Page <ChevronRight size={18} className="ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Scrapbook Content */}
-                  <div className="bg-gray-50 rounded-lg p-4 md:p-8">
-                    <ScrapbookTemplate
-                      theme={theme.name}
-                      images={getPlaceholderImages(theme.id)}
-                      title={`${theme.name} Adventure - Page ${currentPage + 1}`}
-                      subtitle={currentPage === 0 ? "My Travel Memories" : undefined}
-                      primaryColor={theme.primaryColor}
-                      secondaryColor={theme.secondaryColor}
-                    />
+                    )}
                   </div>
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-        </div>
-      </section>
-      
-      {/* Features */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Scrapbook Features</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-raahi-blue-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-raahi-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Multiple Themes</h3>
-              <p className="text-gray-600">
-                Choose from various themes including Friends, Love, Beach, Honeymoon, and Mountains.
-              </p>
-            </div>
-            
-            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-raahi-orange-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-raahi-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Customizable Pages</h3>
-              <p className="text-gray-600">
-                Add images, text, stickers, and change colors to personalize your scrapbook.
-              </p>
-            </div>
-            
-            <div className="text-center p-6 bg-white rounded-lg shadow-sm">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3">Easy Sharing</h3>
-              <p className="text-gray-600">
-                Download your scrapbook as PDF or share directly to social media with friends.
-              </p>
-            </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FaPalette />
+                    <Label className="font-medium">Theme</Label>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {(Object.keys(themes) as ThemeKey[]).map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => setSelectedTheme(key)}
+                        className={`rounded-md border p-3 text-left transition ${
+                          selectedTheme === key ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'
+                        } ${themes[key].bgColor}`}
+                      >
+                        <div className="text-sm font-medium">{themes[key].name}</div>
+                        <div className={`text-xs ${themes[key].textColor} opacity-80`}>{key}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Decoration intensity */}
+                <div className="space-y-2">
+                  <Label className="font-medium">Background Style</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['minimal','decorative','bold'] as DecorIntensity[]).map(mode => (
+                      <Button
+                        key={mode}
+                        variant={decorIntensity === mode ? 'default' : 'outline'}
+                        onClick={() => setDecorIntensity(mode)}
+                      >
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  {isEditing ? (
+                    <>
+                      <Button onClick={createScrapbook} className="w-full">
+                        Create Scrapbook
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={saveToProfile} disabled={images.length === 0}>
+                        Save to Profile
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="outline" className="w-full" onClick={reEdit}>
+                        <FaEdit className="mr-2" />
+                        Re-edit
+                      </Button>
+                      <Button className="w-full" onClick={downloadCurrent}>
+                        <FaDownload className="mr-2" />
+                        Download PNG
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={saveToProfile}>
+                        Save to Profile
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Live Preview (always visible on the right) */}
+            <Card className="lg:col-span-2">
+              <CardContent className="p-4">
+                {slides.length > 0 ? (
+                  <div ref={containerRef} className="w-full">
+                    <Swiper
+                      effect="creative"
+                      creativeEffect={{
+                        prev: { shadow: true, translate: ['-120%', 0, -500], rotate: [0, 0, -90] },
+                        next: { shadow: true, translate: ['120%', 0, -500], rotate: [0, 0, 90] },
+                      }}
+                      grabCursor
+                      modules={[EffectCreative, Pagination, Navigation]}
+                      className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-lg"
+                      pagination={{ clickable: true }}
+                      navigation
+                    >
+                      {/* Cover */}
+                      <SwiperSlide className="bg-white rounded-lg shadow-xl">
+                        <div
+                          className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
+                        >
+                          <h2 className={`text-4xl ${themes[selectedTheme].textColor} font-display italic`}>
+                            {title || 'My Travel Memories'}
+                          </h2>
+                        </div>
+                      </SwiperSlide>
+
+                      {/* Pages */}
+                      {slides.map((slide, pageIndex) => {
+                        const mod = pageIndex % 4;
+                        const Layout = mod === 0 ? Layout1 : mod === 1 ? Layout2 : mod === 2 ? Layout3 : Layout4;
+                        return (
+                          <SwiperSlide key={pageIndex} className="bg-white rounded-lg shadow-xl">
+                            <Layout
+                              image1={slide.images[0]}
+                              image2={slide.images[1]}
+                              // @ts-expect-error layouts accept optional image3/image4
+                              image3={slide.images[2]}
+                              // @ts-expect-error layout3 accepts image4
+                              image4={slide.images[3]}
+                              theme={selectedTheme}
+                              stickers={[...slide.stickers]}
+                            />
+                          </SwiperSlide>
+                        );
+                      })}
+
+                      {/* End slide */}
+                      <SwiperSlide className="bg-white rounded-lg shadow-xl">
+                        <div
+                          className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
+                        >
+                          <h2 className={`text-3xl ${themes[selectedTheme].textColor} font-display italic`}>The End</h2>
+                        </div>
+                      </SwiperSlide>
+                    </Swiper>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-[4/3] rounded-xl bg-white grid place-items-center text-gray-400">
+                    Add photos and click “Create Scrapbook” to see the preview.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
-      
       <Footer />
     </div>
   );

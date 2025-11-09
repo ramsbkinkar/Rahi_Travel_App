@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin, Book, Camera, Users } from 'lucide-react';
@@ -11,7 +10,7 @@ const Index: React.FC = () => {
   // Sample travel packages
   const travelPackages = [
     {
-      id: 1,
+      id: "1",
       image: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
       title: "Serene Kashmir Voyage",
       location: "Kashmir, India",
@@ -20,7 +19,7 @@ const Index: React.FC = () => {
       category: "Honeymoon"
     },
     {
-      id: 2,
+      id: "2",
       image: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb",
       title: "Goa Beach Adventure",
       location: "Goa, India",
@@ -29,7 +28,7 @@ const Index: React.FC = () => {
       category: "Friends"
     },
     {
-      id: 3,
+      id: "3",
       image: "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
       title: "Rajasthan Heritage Tour",
       location: "Rajasthan, India",
@@ -56,7 +55,7 @@ const Index: React.FC = () => {
     {
       id: 3,
       name: "Varanasi",
-      image: "https://images.unsplash.com/photo-1561361058-c24e021e539f",
+      image: "https://s7ap1.scene7.com/is/image/incredibleindia/manikarnika-ghat-city-hero?qlt=82&ts=1727959374496",
       description: "Experience spiritual awakening in one of the oldest cities."
     }
   ];
@@ -80,12 +79,16 @@ const Index: React.FC = () => {
               Your smart travel companion for creating unforgettable journeys across India.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-raahi-blue hover:bg-raahi-blue-dark text-white">
-                Explore Packages
-              </Button>
-              <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/20">
-                Create Scrapbook
-              </Button>
+              <Link to="/travel-packages">
+                <Button size="lg" variant="default">
+                  Explore Packages
+                </Button>
+              </Link>
+              <Link to="/scrapbook">
+                <Button size="lg" variant="outline" className="bg-transparent text-white border-white hover:bg-white/20">
+                  Create Scrapbook
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -114,15 +117,16 @@ const Index: React.FC = () => {
               duration={pkg.duration}
               price={pkg.price}
               category={pkg.category}
+              id={pkg.id}
             />
           ))}
         </div>
         
         <div className="mt-12 text-center">
           <Link to="/travel-packages">
-            <Button className="bg-raahi-blue hover:bg-raahi-blue-dark">
+            <Button variant="default">
               View All Packages
-              <ArrowRight size={16} className="ml-2" />
+              <ArrowRight size={16} />
             </Button>
           </Link>
         </div>
@@ -160,9 +164,9 @@ const Index: React.FC = () => {
           
           <div className="mt-12 text-center">
             <Link to="/explore-india">
-              <Button className="bg-raahi-blue hover:bg-raahi-blue-dark">
+              <Button variant="default">
                 View All Cities
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRight size={16} />
               </Button>
             </Link>
           </div>
@@ -179,14 +183,14 @@ const Index: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
           {/* Digital Scrapbook */}
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-raahi-blue-light rounded-full mb-4">
-              <Book size={24} className="text-raahi-blue" />
+            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mb-4">
+              <Book size={24} className="text-primary" />
             </div>
             <h3 className="text-xl font-bold mb-3">Digital Scrapbook</h3>
             <p className="text-gray-600 mb-4">
               Create beautiful digital memories of your trips with our easy-to-use scrapbook templates.
             </p>
-            <Link to="/scrapbook" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/scrapbook" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               Try Scrapbook <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
@@ -200,35 +204,35 @@ const Index: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Share your travel moments, like and comment on others' experiences, and find inspiration.
             </p>
-            <Link to="/social-feed" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/social-feed" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               View Feed <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
           
           {/* Live Trip Tracker */}
           <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-raahi-blue-light rounded-full mb-4">
-              <MapPin size={24} className="text-raahi-blue" />
+            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-primary/10 rounded-full mb-4">
+              <MapPin size={24} className="text-primary" />
             </div>
             <h3 className="text-xl font-bold mb-3">Trip Tracker</h3>
             <p className="text-gray-600 mb-4">
               Track your group's journey in real-time and share your location with friends and family.
             </p>
-            <Link to="/trip-tracker" className="text-raahi-blue hover:text-raahi-blue-dark font-medium flex items-center justify-center">
+            <Link to="/trip-tracker" className="text-primary hover:text-primary/90 font-medium flex items-center justify-center">
               Try Tracker <ArrowRight size={16} className="ml-1" />
             </Link>
           </div>
         </div>
       </section>
       
-      {/* Testimonials */}
-      <section className="py-16 bg-raahi-blue-light">
+      {/* Testimonials Section */}
+      <section className="py-16 bg-[#E6F0FF]">
         <div className="section-container">
           <h2 className="section-title">What Our Travelers Say</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white p-6 rounded-lg shadow-md">
+              <div key={i} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center mb-4">
                   <div className="mr-4">
                     <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
@@ -255,13 +259,13 @@ const Index: React.FC = () => {
       
       {/* CTA Section */}
       <section className="section-container">
-        <div className="bg-gradient-to-r from-raahi-blue to-raahi-orange rounded-xl p-8 md:p-12 text-white text-center">
+        <div className="bg-gradient-to-r from-primary to-raahi-orange rounded-xl p-8 md:p-12 text-white text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Journey?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Join thousands of travelers who are discovering India's beauty with Raahi as their trusted companion.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="bg-white text-raahi-blue hover:bg-gray-100">
+            <Button size="lg" className="bg-white text-primary hover:bg-gray-100">
               <Users size={18} className="mr-2" />
               Sign Up Now
             </Button>

@@ -1,15 +1,14 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/AuthContext';
 import AuthForms from '@/components/AuthForms';
 
 interface LoginSignupProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultIsSignUp?: boolean;
 }
 
-const LoginSignup: React.FC<LoginSignupProps> = ({ isOpen, onClose }) => {
+const LoginSignup: React.FC<LoginSignupProps> = ({ isOpen, onClose, defaultIsSignUp = false }) => {
   const handleSuccess = () => {
     onClose();
   };
@@ -18,12 +17,12 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold text-raahi-blue">
+          <DialogTitle className="text-center text-2xl font-bold text-primary">
             <span className="text-raahi-orange">R</span>aahi Account
           </DialogTitle>
         </DialogHeader>
         
-        <AuthForms onSuccess={handleSuccess} />
+        <AuthForms onSuccess={handleSuccess} defaultIsSignUp={defaultIsSignUp} />
       </DialogContent>
     </Dialog>
   );

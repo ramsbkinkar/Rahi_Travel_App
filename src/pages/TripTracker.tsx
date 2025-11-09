@@ -1,386 +1,321 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useEffect, useRef, useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import TravelCard from '@/components/TravelCard';
-import { getTravelPackages } from '@/lib/supabase';
-import { Loader2, Search } from 'lucide-react';
+import { apiClient } from '@/integration/api/client';
+import { MapPin, Users, AlertTriangle, Link2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
-interface SupabasePackage {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string;
-  duration: string | null;
-  price: number;
-  image_url: string | null;
-  category: string | null;
-  created_at: string | null;
-}
-
-interface TravelPackage {
-  id: string;
-  title: string;
-  location: string;
-  duration: string;
-  price: string;
-  image_url: string;
-  category: string;
-}
+type MemberPoint = {
+  user_id: number;
+  lat: number;
+  lng: number;
+  ts: number;
+};
 
 const TripTracker: React.FC = () => {
   const { toast } = useToast();
-  const [showShareLink, setShowShareLink] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentCategory, setCurrentCategory] = useState('all');
+  const currentUserId = useRef<number>(parseInt(localStorage.getItem('authToken') || '0'));
+  const [tripId, setTripId] = useState<number | null>(null);
+  const [invite, setInvite] = useState<string>('');
+  const [joinTripId, setJoinTripId] = useState<string>('');
+  const [joinToken, setJoinToken] = useState<string>('');
+  const [points, setPoints] = useState<MemberPoint[]>([]);
+  const [lastFetch, setLastFetch] = useState<string | undefined>(undefined);
+  const [lastSosFetch, setLastSosFetch] = useState<string | undefined>(undefined);
+  const [sosUsers, setSosUsers] = useState<Map<number, number>>(new Map()); // user_id -> expiry ts
+  const [blink, setBlink] = useState<boolean>(false);
+  const watchIdRef = useRef<number | null>(null);
 
-  // Sample travel packages data (fallback data while loading from Supabase)
-  const samplePackages: TravelPackage[] = [
-    {
-      id: "1",
-      image_url: "https://images.unsplash.com/photo-1472396961693-142e6e269027",
-      title: "Serene Kashmir Voyage",
-      location: "Kashmir, India",
-      duration: "6 Days / 5 Nights",
-      price: "₹32,999",
-      category: "Honeymoon"
-    },
-    {
-      id: "2",
-      image_url: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb",
-      title: "Goa Beach Adventure",
-      location: "Goa, India",
-      duration: "4 Days / 3 Nights",
-      price: "₹18,499",
-      category: "Friends"
-    },
-    {
-      id: "3",
-      image_url: "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
-      title: "Rajasthan Heritage Tour",
-      location: "Rajasthan, India",
-      duration: "8 Days / 7 Nights",
-      price: "₹45,999",
-      category: "Family"
+  // Stable color per user
+  const colorForUser = (userId: number) => {
+    const palette = ['#2563eb','#16a34a','#ea580c','#a855f7','#0891b2','#d946ef','#059669','#f97316','#64748b','#22c55e'];
+    return palette[userId % palette.length];
+  };
+
+  // Blink ticker when any SOS is active
+  useEffect(() => {
+    const now = Date.now();
+    const hasActive = Array.from(sosUsers.values()).some(exp => exp > now);
+    if (!hasActive) return;
+    const id = setInterval(() => setBlink(b => !b), 700);
+    return () => clearInterval(id);
+  }, [sosUsers]);
+
+  useEffect(() => {
+    if (!tripId) return;
+    let active = true;
+    const tick = async () => {
+      try {
+        const resp = await apiClient.getLocations(tripId, lastFetch);
+        if (resp.status === 'success') {
+          const now = new Date().toISOString();
+          const newPoints: MemberPoint[] = (resp.data || []).map((r: any) => ({
+            user_id: r.user_id,
+            lat: r.lat,
+            lng: r.lng,
+            ts: new Date(r.created_at).getTime()
+          }));
+          if (active && newPoints.length > 0) {
+            setPoints(prev => {
+              const merged = [...prev, ...newPoints].slice(-1000);
+              const latest = new Map<number, MemberPoint>();
+              merged.forEach(p => {
+                const prevP = latest.get(p.user_id);
+                if (!prevP || p.ts > prevP.ts) latest.set(p.user_id, p);
+              });
+              return Array.from(latest.values());
+            });
+          }
+          if (active) setLastFetch(now);
+        }
+      } catch {}
+    };
+    tick();
+    const id = setInterval(tick, 10000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [tripId, lastFetch]);
+
+  // Poll SOS events; keep user blinking red for 10 minutes
+  useEffect(() => {
+    if (!tripId) return;
+    let active = true;
+    const tick = async () => {
+      try {
+        const resp = await apiClient.getSOS(tripId, lastSosFetch);
+        if (resp.status === 'success') {
+          const nowIso = new Date().toISOString();
+          const events: Array<{ user_id: number; created_at: string }> = resp.data || [];
+          if (events.length > 0 && active) {
+            setSosUsers(prev => {
+              const next = new Map(prev);
+              const ttl = 10 * 60 * 1000; // 10 minutes
+              const now = Date.now();
+              events.forEach(e => {
+                next.set(e.user_id, now + ttl);
+              });
+              // cleanup expired
+              for (const [uid, exp] of next) {
+                if (exp < now) next.delete(uid);
+              }
+              return next;
+            });
+          }
+          if (active) setLastSosFetch(nowIso);
+        }
+      } catch {}
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { active = false; clearInterval(id); };
+  }, [tripId, lastSosFetch]);
+
+  const startSharing = () => {
+    if (!tripId) {
+      toast({ title: 'Join or create a trip first', variant: 'destructive' });
+      return;
     }
-  ];
-  
-  const { data: supabasePackages = [], isLoading: isLoadingPackages } = useQuery<SupabasePackage[]>({
-    queryKey: ['travelPackages', currentCategory],
-    queryFn: () => getTravelPackages(currentCategory),
-  });
-
-  // Transform Supabase data to match our TravelPackage interface
-  const travelPackages: TravelPackage[] = isLoadingPackages ? samplePackages : supabasePackages.map(pkg => ({
-    id: pkg.id,
-    title: pkg.title,
-    location: pkg.location,
-    duration: pkg.duration || "Duration not specified",
-    price: `₹${pkg.price.toLocaleString()}`,
-    image_url: pkg.image_url || "https://images.unsplash.com/photo-1469041797191-50ace28483c3",
-    category: pkg.category || "All"
-  }));
-
-  const filterPackages = (packages: TravelPackage[], search: string) => {
-    return packages.filter(pkg => 
-      pkg.title.toLowerCase().includes(search.toLowerCase()) || 
-      pkg.location.toLowerCase().includes(search.toLowerCase())
+    if (!navigator.geolocation) {
+      toast({ title: 'Geolocation not supported', variant: 'destructive' });
+      return;
+    }
+    if (watchIdRef.current !== null) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (pos) => {
+        try {
+          await apiClient.postLocation(tripId, {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            heading: pos.coords.heading || undefined,
+            speed: pos.coords.speed || undefined
+          });
+        } catch {}
+      },
+      (err) => {
+        toast({ title: 'Location error', description: err.message, variant: 'destructive' });
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
+    toast({ title: 'Sharing started' });
   };
 
-  const handleShare = () => {
-    setShowShareLink(true);
-    toast({
-      title: "Link Copied!",
-      description: "Trip tracking link has been copied to clipboard.",
-      duration: 3000,
-    });
-  };
-  
-  const travelersData = [
-    {
-      id: 1,
-      name: "Amit Sharma",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      location: "New Delhi",
-      coordinates: { x: 30, y: 35 },
-      lastUpdated: "2 minutes ago"
-    },
-    {
-      id: 2,
-      name: "Priya Patel",
-      avatar: "https://i.pravatar.cc/150?img=2",
-      location: "Mumbai",
-      coordinates: { x: 22, y: 65 },
-      lastUpdated: "5 minutes ago"
-    },
-    {
-      id: 3,
-      name: "Rahul Singh",
-      avatar: "https://i.pravatar.cc/150?img=3",
-      location: "Jaipur",
-      coordinates: { x: 35, y: 52 },
-      lastUpdated: "15 minutes ago"
-    },
-    {
-      id: 4,
-      name: "Ananya Gupta",
-      avatar: "https://i.pravatar.cc/150?img=4",
-      location: "Kolkata",
-      coordinates: { x: 70, y: 45 },
-      lastUpdated: "30 minutes ago"
-    },
-    {
-      id: 5,
-      name: "Vikram Reddy",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      location: "Bangalore",
-      coordinates: { x: 50, y: 80 },
-      lastUpdated: "1 hour ago"
+  const stopSharing = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      toast({ title: 'Sharing paused' });
     }
-  ];
+  };
+
+  const createTrip = async () => {
+    try {
+      const resp = await apiClient.createTrip('Group Trip');
+      if (resp.status === 'success') {
+        setTripId(resp.data.id);
+        setInvite(resp.data.invite_code);
+        setPoints([]);
+        setLastFetch(undefined);
+        toast({ title: 'Trip created', description: `Invite code: ${resp.data.invite_code}` });
+      }
+    } catch {
+      toast({ title: 'Failed to create trip', variant: 'destructive' });
+    }
+  };
+
+  const joinTrip = async () => {
+    try {
+      const id = parseInt(joinTripId);
+      if (!id || !joinToken) {
+        toast({ title: 'Enter trip id and invite code', variant: 'destructive' });
+        return;
+      }
+      const resp = await apiClient.joinTrip(id, joinToken);
+      if (resp.status === 'success') {
+        setTripId(id);
+        setInvite(joinToken);
+        setPoints([]);
+        setLastFetch(undefined);
+        toast({ title: 'Joined trip' });
+      }
+    } catch {
+      toast({ title: 'Failed to join trip', variant: 'destructive' });
+    }
+  };
+
+  const triggerSOS = async () => {
+    if (!tripId) return;
+    try {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        await apiClient.triggerSOS(tripId, { lat: pos.coords.latitude, lng: pos.coords.longitude });
+        // Immediately mark local user as SOS so UI reflects without waiting for poll
+        setSosUsers(prev => {
+          const next = new Map(prev);
+          next.set(currentUserId.current, Date.now() + 10 * 60 * 1000);
+          return next;
+        });
+        toast({ title: 'SOS sent', variant: 'destructive' });
+      }, async () => {
+        await apiClient.triggerSOS(tripId, { lat: 0, lng: 0 });
+        setSosUsers(prev => {
+          const next = new Map(prev);
+          next.set(currentUserId.current, Date.now() + 10 * 60 * 1000);
+          return next;
+        });
+        toast({ title: 'SOS sent', variant: 'destructive' });
+      });
+    } catch {
+      toast({ title: 'Failed to send SOS', variant: 'destructive' });
+    }
+  };
+
+  const center = points.length ? [points[0].lat, points[0].lng] as [number, number] : [20.5937, 78.9629];
 
   return (
     <div className="min-h-screen">
       <NavBar />
-      
-      {/* Header Section */}
-      <section className="pt-28 pb-8">
+
+      <section className="pt-28 pb-8 bg-[#E6F0FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-6">Live Group Trip Tracker</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              Group Trip <span className="text-orange-500">Tracker</span>
+            </h1>
             <p className="text-lg text-gray-600 mb-8">
-              Keep track of your travel companions in real-time across India. See where everyone is and stay connected throughout your journey.
+              Share your live location with friends during a trip, see everyone on a common map, and trigger SOS if needed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                className="bg-raahi-blue hover:bg-raahi-blue-dark"
-                onClick={() => {
-                  toast({
-                    title: "Location Updated",
-                    description: "Your current location has been updated.",
-                    duration: 3000,
-                  });
-                }}
-              >
-                Update My Location
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-raahi-blue text-raahi-blue hover:bg-raahi-blue-light/30"
-                onClick={handleShare}
-              >
-                Share Trip Link
-              </Button>
-            </div>
-            
-            {showShareLink && (
-              <div className="mt-4 p-3 bg-gray-50 border rounded-md flex items-center justify-between">
-                <span className="text-sm text-gray-600 truncate">
-                  https://raahi.travel/trip/TRIP123456
-                </span>
-                <button 
-                  className="text-raahi-blue text-sm font-medium"
-                  onClick={() => {
-                    toast({
-                      title: "Link Copied Again!",
-                      description: "Trip tracking link has been copied to clipboard.",
-                      duration: 3000,
-                    });
-                  }}
-                >
-                  Copy
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </section>
-      
-      {/* Map Section */}
-      <section className="pb-12">
+
+      <section className="py-8">
         <div className="container mx-auto px-4">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            {/* Map Container */}
-            <div className="relative h-[500px] bg-gray-100">
-              {/* India Map Image */}
-              <div className="absolute inset-0">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/e/e4/India_topo_big.jpg" 
-                  alt="Map of India" 
-                  className="w-full h-full object-cover" 
-                />
-              </div>
-              
-              {/* Traveler Pins */}
-              <TooltipProvider>
-                {travelersData.map(traveler => (
-                  <Tooltip key={traveler.id}>
-                    <TooltipTrigger asChild>
-                      <div 
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer animate-bounce"
-                        style={{ left: `${traveler.coordinates.x}%`, top: `${traveler.coordinates.y}%` }}
-                      >
-                        <div className="relative">
-                          <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                            <AvatarImage src={traveler.avatar} alt={traveler.name} />
-                            <AvatarFallback>{traveler.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white"></span>
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="p-2">
-                        <p className="font-semibold">{traveler.name}</p>
-                        <p className="text-sm text-gray-500">{traveler.location}</p>
-                        <p className="text-xs text-gray-400">Updated {traveler.lastUpdated}</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </TooltipProvider>
-            </div>
-            
-            {/* Legend & Controls */}
-            <div className="p-4 border-t">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center">
-                    <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                    <span className="text-sm text-gray-600">Online</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="w-3 h-3 bg-gray-400 rounded-full mr-2"></span>
-                    <span className="text-sm text-gray-600">Offline</span>
-                  </div>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-1">
+              <CardContent className="p-4 space-y-4">
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold">Create Trip</div>
+                  <Button onClick={createTrip} className="w-full">
+                    <Users className="w-4 h-4 mr-2" /> New Trip
+                  </Button>
                 </div>
-                
-                <div className="flex items-center space-x-4">
-                  <Button variant="outline" size="sm">Zoom In</Button>
-                  <Button variant="outline" size="sm">Zoom Out</Button>
-                  <Button variant="outline" size="sm">Center Map</Button>
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold">Join Trip</div>
+                  <div className="flex gap-2">
+                    <Input placeholder="Trip ID" value={joinTripId} onChange={(e) => setJoinTripId(e.target.value)} />
+                    <Input placeholder="Invite Code" value={joinToken} onChange={(e) => setJoinToken(e.target.value)} />
+                  </div>
+                  <Button onClick={joinTrip} className="w-full" variant="outline">
+                    <Link2 className="w-4 h-4 mr-2" /> Join
+                  </Button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Travel Packages Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Recommended Travel Packages</h2>
-          <p className="text-gray-600 mb-8">
-            Discover curated travel experiences perfect for your next adventure across India.
-          </p>
-
-          {/* Search & Filter */}
-          <div className="mb-8">
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search packages by name or location..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <Tabs defaultValue="all" onValueChange={setCurrentCategory} className="w-full">
-              <TabsList className="mb-6 flex flex-wrap justify-start gap-2">
-                <TabsTrigger value="all">All Packages</TabsTrigger>
-                <TabsTrigger value="Honeymoon">Honeymoon</TabsTrigger>
-                <TabsTrigger value="Adventure">Adventure</TabsTrigger>
-                <TabsTrigger value="Spiritual">Spiritual</TabsTrigger>
-                <TabsTrigger value="Friends">Friends</TabsTrigger>
-                <TabsTrigger value="Family">Family</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value={currentCategory}>
-                {isLoadingPackages ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-raahi-blue" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filterPackages(travelPackages, searchTerm).map((pkg: TravelPackage) => (
-                      <TravelCard
-                        key={pkg.id}
-                        image={pkg.image_url}
-                        title={pkg.title}
-                        location={pkg.location}
-                        duration={pkg.duration}
-                        price={pkg.price}
-                        category={pkg.category}
-                        id={pkg.id}
-                      />
-                    ))}
-                  </div>
+                {tripId && (
+                  <>
+                    <div className="text-sm">
+                      <span className="font-semibold">Trip:</span> #{tripId}
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-semibold">Invite:</span> {invite || '—'}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={startSharing} className="w-full">Start Sharing</Button>
+                      <Button onClick={stopSharing} variant="outline" className="w-full">Pause</Button>
+                    </div>
+                    <Button onClick={triggerSOS} variant="destructive" className="w-full">
+                      <AlertTriangle className="w-4 h-4 mr-2" /> SOS
+                    </Button>
+                  </>
                 )}
+              </CardContent>
+            </Card>
 
-                {filterPackages(travelPackages, searchTerm).length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No packages found matching your search.</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="mt-8 text-center">
-            <Button 
-              variant="outline" 
-              className="border-raahi-blue text-raahi-blue hover:bg-raahi-blue-light/30"
-              onClick={() => window.location.href = '/travel-packages'}
-            >
-              View All Packages
-            </Button>
+            <Card className="md:col-span-2">
+              <CardContent className="p-0">
+                <MapContainer center={center} zoom={5} style={{ height: 420, width: '100%' }}>
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {points.map((p, idx) => {
+                    const lastMin = Math.max(0, Math.floor((Date.now() - p.ts) / 60000));
+                    const baseColor = colorForUser(p.user_id);
+                    const isSOS = (sosUsers.get(p.user_id) || 0) > Date.now();
+                    const color = isSOS ? '#ef4444' : baseColor;
+                    const fillOpacity = isSOS ? (blink ? 0.35 : 0.9) : 0.8;
+                    const radius = isSOS ? (blink ? 12 : 9) : 8;
+                    return (
+                      <CircleMarker key={idx} center={[p.lat, p.lng]} radius={radius} pathOptions={{ color, fillColor: color, fillOpacity }}>
+                        <Popup>
+                          <div className="text-sm">
+                            <div className="font-semibold flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" /> User #{p.user_id} {isSOS && <Badge variant="destructive" className="ml-2">SOS</Badge>}
+                            </div>
+                            <div className="text-gray-600">{lastMin < 1 ? 'online' : `last seen ${lastMin}m`}</div>
+                          </div>
+                        </Popup>
+                      </CircleMarker>
+                    );
+                  })}
+                </MapContainer>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
-      
-      {/* Travelers List */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Your Travel Companions</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {travelersData.map(traveler => (
-              <div key={traveler.id} className="bg-white rounded-lg shadow-sm p-4 flex items-center space-x-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={traveler.avatar} alt={traveler.name} />
-                  <AvatarFallback>{traveler.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1">
-                  <h3 className="font-medium">{traveler.name}</h3>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span>{traveler.location}</span>
-                  </div>
-                  <p className="text-xs text-gray-400">Updated {traveler.lastUpdated}</p>
-                </div>
-                
-                <Button variant="ghost" size="sm">Message</Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      
+
       <Footer />
     </div>
   );
 };
 
 export default TripTracker;
+
+

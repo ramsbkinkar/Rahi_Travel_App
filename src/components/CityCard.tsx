@@ -12,7 +12,19 @@ interface CityCardProps {
 
 const CityCard: React.FC<CityCardProps> = ({ image, name, description, slug }) => {
   return (
-    <Link to={`/explore-india/${slug}`}>
+    <Link
+      to={`/explore-india/${slug}`}
+      state={{
+        cityFallback: {
+          slug,
+          name,
+          image_url: image,
+          description,
+          best_time_to_visit: 'October to March',
+          highlights: ['City centre walk', 'Local cuisine', 'Popular landmark'],
+        },
+      }}
+    >
       <Card className="overflow-hidden card-hover h-full">
         <div className="relative h-48 overflow-hidden">
           <img 

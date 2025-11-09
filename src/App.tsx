@@ -1,14 +1,16 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SocialProvider } from "@/contexts/SocialContext";
 import LoadingScreen from "./components/LoadingScreen";
 import React, { Suspense } from "react";
 import Index from "./pages/Index";
 import TravelPackages from "./pages/TravelPackages";
+import PackageDetails from "./pages/PackageDetails";
+import UserProfile from "./pages/UserProfile";
 import ExploreIndia from "./pages/ExploreIndia";
 import CityDetails from "./pages/CityDetails";
 import Scrapbook from "./pages/Scrapbook";
@@ -16,7 +18,10 @@ import SocialFeed from "./pages/SocialFeed";
 import TripTracker from "./pages/TripTracker";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
+import ScrapbookView from "./pages/ScrapbookView";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import MusafirWidget from "./components/MusafirWidget";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,41 +35,58 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Suspense fallback={<LoadingScreen />}>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/travel-packages" element={<TravelPackages />} />
-                <Route path="/explore-india" element={<ExploreIndia />} />
-                <Route path="/explore-india/:citySlug" element={<CityDetails />} />
-                <Route 
-                  path="/scrapbook" 
-                  element={
-                    <ProtectedRoute>
-                      <Scrapbook />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/social-feed" element={<SocialFeed />} />
-                <Route 
-                  path="/trip-tracker" 
-                  element={
-                    <ProtectedRoute>
-                      <TripTracker />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </Suspense>
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SocialProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Suspense fallback={<LoadingScreen />}>
+                <div className="min-h-screen global-page-bg">
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/travel-packages" element={<TravelPackages />} />
+                      <Route path="/travel-packages/:id" element={<PackageDetails />} />
+                      <Route path="/profile/:id" element={<UserProfile />} />
+                      <Route path="/explore-india" element={<ExploreIndia />} />
+                      <Route path="/explore-india/:citySlug" element={<CityDetails />} />
+                      <Route 
+                        path="/scrapbook" 
+                        element={
+                          <ProtectedRoute>
+                            <Scrapbook />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route path="/social-feed" element={<SocialFeed />} />
+                      <Route 
+                        path="/trip-tracker" 
+                        element={
+                          <ProtectedRoute>
+                            <TripTracker />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/scrapbook/view/:id" 
+                        element={
+                          <ProtectedRoute>
+                            <ScrapbookView />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </BrowserRouter>
+                </div>
+              </Suspense>
+              <MusafirWidget />
+            </TooltipProvider>
+          </SocialProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
