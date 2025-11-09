@@ -171,42 +171,39 @@ const SocialFeed: React.FC = () => {
       {/* Header Section */}
       <section className="pt-24 pb-6 hero-gradient">
         <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-5">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Travelgram</h1>
               <p className="mt-2 text-gray-600">Share and discover travel moments from the community.</p>
             </div>
 
-            {/* Top bar: search + actions */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-center mb-6">
-              <Card className="col-span-1">
-                <CardContent className="p-2">
-                  <div className="relative w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Search posts, users, locations, hashtags..."
-                      className="pl-10 pr-4 h-11"
-                      value={searchTerm}
-                      onChange={handleSearch}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              <Button 
-                variant="outline"
-                className="h-11"
-                onClick={() => setIsSearchModalOpen(true)}
-              >
-                <Users size={16} className="mr-2" />
-                Find Users
-              </Button>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="default" className="h-11">
-                    <Upload size={16} className="mr-2" /> New Post
-                  </Button>
-                </DialogTrigger>
+            {/* Top bar: search + actions (compact) */}
+            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
+              <div className="relative w-full md:flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search posts, users, locations, hashtags..."
+                  className="pl-10 pr-4 h-10"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
+              <div className="flex items-center gap-2 md:ml-auto">
+                <Button 
+                  variant="outline"
+                  className="h-10"
+                  onClick={() => setIsSearchModalOpen(true)}
+                >
+                  <Users size={16} className="mr-2" />
+                  Find Users
+                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="default" className="h-10">
+                      <Upload size={16} className="mr-2" /> New Post
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-[550px]">
                   <DialogHeader>
                     <DialogTitle className="text-center text-2xl font-bold">
@@ -331,6 +328,7 @@ const SocialFeed: React.FC = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </div>
         </div>
@@ -341,7 +339,7 @@ const SocialFeed: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-xl md:max-w-2xl mx-auto">
             {/* Filter Bar */}
-            <div className="bg-white p-3 md:p-4 mb-6 rounded-full shadow-sm flex items-center justify-between sticky top-2 z-10">
+            <div className="bg-white p-3 md:p-4 mb-6 rounded-full shadow-sm flex items-center justify-between">
               <div className="hidden md:flex items-center">
                 <Filter size={16} className="text-gray-500 mr-2" />
                 <span className="text-gray-700 font-medium">Filter</span>

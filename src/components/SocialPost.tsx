@@ -74,13 +74,10 @@ const SocialPost: React.FC<SocialPostProps> = ({
   const toggleFollow = () => {
     if (!user) return;
     const set = getFollowingSet();
-    if (set.has(user_id)) {
-      set.delete(user_id);
-      setIsFollowing(false);
-    } else {
-      set.add(user_id);
-      setIsFollowing(true);
-    }
+    const alreadyFollowing = set.has(user_id);
+    // Toggle set first
+    if (alreadyFollowing) set.delete(user_id); else set.add(user_id);
+    setIsFollowing(!alreadyFollowing);
     localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
     // Maintain per-user maps for profile counts
     const followersByUserId = getMap('followersByUserId');
@@ -91,7 +88,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
     const followersArr = new Set<number>(followersByUserId[targetKey] || []);
     // following[me] includes target
     const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
-    if (isFollowing) {
+    if (alreadyFollowing) {
       followersArr.delete(user.id);
       myFollowingArr.delete(user_id);
     } else {
