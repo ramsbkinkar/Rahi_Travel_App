@@ -1,7 +1,10 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
-import { API_BASE_URL } from '@/utils/apiBase';
 
-// Base URL driven by environment in production
+// Resolve API base URL:
+// 1) Use VITE_API_BASE_URL when set in Amplify
+// 2) Fallback to your HTTPS API if env is missing
+const envUrl = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+const API_BASE_URL = (envUrl && envUrl.replace(/\/$/, '')) || 'https://api.3.91.185.220.sslip.io/api';
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -202,7 +205,7 @@ class ApiClient {
   }
 
   async createPost(
-    caption: string, 
+    caption: string,
     location: string,
     imageBase64: string,
     tags: string[]
@@ -242,8 +245,8 @@ class ApiClient {
       const response: AxiosResponse<CommentsResponse> = await axiosInstance.get(`/posts/${postId}/comments`);
       return response.data;
     } catch (error) {
-      console.error(`Failed to fetch comments for post ${postId}:`, error);
-      throw error;
+      console.error('Error fetching comments:', error);
+      return { status: 'error', data: [] };
     }
   }
 
@@ -251,12 +254,12 @@ class ApiClient {
     try {
       const user_id = parseInt(localStorage.getItem('authToken') || '0');
       const response: AxiosResponse<{ status: string; data?: Comment }> = await axiosInstance.post(
-        `/posts/${postId}/comment`, 
+        `/posts/${postId}/comment`,
         { user_id, content }
       );
       return response.data;
     } catch (error) {
-      console.error(`Failed to add comment to post ${postId}:`, error);
+      console.error('Error adding comment:', error);
       throw error;
     }
   }
@@ -265,12 +268,12 @@ class ApiClient {
     try {
       const user_id = parseInt(localStorage.getItem('authToken') || '0');
       const response: AxiosResponse<{ status: string; message?: string }> = await axiosInstance.delete(
-        `/posts/${postId}`, 
+        `/posts/${postId}`,
         { data: { user_id } }
       );
       return response.data;
     } catch (error) {
-      console.error(`Failed to delete post ${postId}:`, error);
+      console.error('Error deleting post:', error);
       throw error;
     }
   }
@@ -289,17 +292,17 @@ class ApiClient {
   async updateUserProfile(userId: number, bio: string, avatarUrl?: string): Promise<UserResponse> {
     try {
       const user_id = parseInt(localStorage.getItem('authToken') || '0');
-      
+
       // Only allow updating own profile
       if (userId !== user_id) {
         throw new Error('You can only update your own profile');
       }
-      
+
       const data: any = { bio, user_id };
       if (avatarUrl) {
         data.avatar_url = avatarUrl;
       }
-      
+
       const response: AxiosResponse<UserResponse> = await axiosInstance.put(`/users/${userId}`, data);
       return response.data;
     } catch (error) {
@@ -346,13 +349,19 @@ class ApiClient {
   }
 
   // Follow system
-  async followUser(targetUserId: number): Promise<{ status: string; data?: { action: 'followed'; followers_count: number; following_count: number } }> {
+  async followUser(targetUserId: number): Promise<{
+    status: string;
+    data?: { action: 'followed'; followers_count: number; following_count: number };
+  }> {
     const follower_id = parseInt(localStorage.getItem('authToken') || '0');
     const response = await axiosInstance.post(`/users/${targetUserId}/follow`, { follower_id });
     return response.data;
   }
 
-  async unfollowUser(targetUserId: number): Promise<{ status: string; data?: { action: 'unfollowed'; followers_count: number; following_count: number } }> {
+  async unfollowUser(targetUserId: number): Promise<{
+    status: string;
+    data?: { action: 'unfollowed'; followers_count: number; following_count: number };
+  }> {
     const follower_id = parseInt(localStorage.getItem('authToken') || '0');
     const response = await axiosInstance.delete(`/users/${targetUserId}/follow`, { data: { follower_id } });
     return response.data;
