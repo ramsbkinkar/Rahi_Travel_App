@@ -65,8 +65,75 @@ const UserProfile: React.FC = () => {
   const [scrapbooks, setScrapbooks] = useState<Array<{ id: number; preview: string | null; title: string; createdAt: string; theme: string }>>([]);
   const [openScrapbookId, setOpenScrapbookId] = useState<string | null>(null);
   const [openScrapbookData, setOpenScrapbookData] = useState<any>(null);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
   
   const isOwnProfile = currentUser?.id === Number(id);
+  const profileUserId = Number(id);
+
+  const getMap = (key: string): Record<string, number[]> => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as Record<string, number[]>) : {};
+    } catch {
+      return {};
+    }
+  };
+  const setMap = (key: string, map: Record<string, number[]>) => {
+    localStorage.setItem(key, JSON.stringify(map));
+  };
+  const getFollowingSet = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('followingUserIds');
+      return raw ? new Set(JSON.parse(raw) as number[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  };
+
+  const recomputeFollowStats = () => {
+    const followersByUserId = getMap('followersByUserId');
+    const followingByUserId = getMap('followingByUserId');
+    const followers = followersByUserId[String(profileUserId)] || [];
+    const following = followingByUserId[String(profileUserId)] || [];
+    setFollowersCount(followers.length);
+    setFollowingCount(following.length);
+    if (currentUser) {
+      const mySet = getFollowingSet();
+      setIsFollowing(mySet.has(profileUserId));
+    } else {
+      setIsFollowing(false);
+    }
+  };
+
+  const toggleFollow = () => {
+    if (!currentUser || isOwnProfile) return;
+    const set = getFollowingSet();
+    const followersByUserId = getMap('followersByUserId');
+    const followingByUserId = getMap('followingByUserId');
+    const targetKey = String(profileUserId);
+    const meKey = String(currentUser.id);
+    const followersArr = new Set<number>(followersByUserId[targetKey] || []);
+    const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
+    if (set.has(profileUserId)) {
+      set.delete(profileUserId);
+      followersArr.delete(currentUser.id);
+      myFollowingArr.delete(profileUserId);
+    } else {
+      set.add(profileUserId);
+      followersArr.add(currentUser.id);
+      myFollowingArr.add(profileUserId);
+    }
+    localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
+    followersByUserId[targetKey] = Array.from(followersArr);
+    followingByUserId[meKey] = Array.from(myFollowingArr);
+    setMap('followersByUserId', followersByUserId);
+    setMap('followingByUserId', followingByUserId);
+    window.dispatchEvent(new Event('following:changed'));
+    window.dispatchEvent(new Event('followers:changed'));
+    recomputeFollowStats();
+  };
   
   // Fetch user profile data
   useEffect(() => {
@@ -190,6 +257,19 @@ const UserProfile: React.FC = () => {
     window.addEventListener('scrapbook:saved', handler as EventListener);
     return () => window.removeEventListener('scrapbook:saved', handler as EventListener);
   }, [id]);
+
+  // Load followers/following counts
+  useEffect(() => {
+    recomputeFollowStats();
+    const handler = () => recomputeFollowStats();
+    window.addEventListener('following:changed', handler as EventListener);
+    window.addEventListener('followers:changed', handler as EventListener);
+    return () => {
+      window.removeEventListener('following:changed', handler as EventListener);
+      window.removeEventListener('followers:changed', handler as EventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, currentUser?.id]);
   
   // Load more posts
   const handleLoadMore = async () => {
@@ -426,6 +506,14 @@ const UserProfile: React.FC = () => {
                     <Grid size={16} className="mr-1" />
                     <span>{postCount} posts</span>
                   </div>
+                  <div className="flex items-center text-gray-600">
+                    <UserIcon size={16} className="mr-1" />
+                    <span>{followersCount} followers</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <UserIcon size={16} className="mr-1" />
+                    <span>{followingCount} following</span>
+                  </div>
                   
                   <div className="flex items-center text-gray-600">
                     <Calendar size={16} className="mr-1" />
@@ -444,17 +532,28 @@ const UserProfile: React.FC = () => {
                   )}
                 </div>
                 
-                {/* Edit Profile Button (only for own profile) */}
-                {isOwnProfile && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setIsEditDialogOpen(true)}
-                  >
-                    <Edit size={16} className="mr-2" />
-                    Edit Profile
-                  </Button>
-                )}
+                {/* Follow / Edit */}
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                  {!isOwnProfile && currentUser && (
+                    <Button 
+                      variant={isFollowing ? 'default' : 'outline'} 
+                      size="sm"
+                      onClick={toggleFollow}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Button>
+                  )}
+                  {isOwnProfile && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsEditDialogOpen(true)}
+                    >
+                      <Edit size={16} className="mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

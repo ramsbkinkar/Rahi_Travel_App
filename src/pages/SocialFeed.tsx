@@ -6,6 +6,7 @@ import SocialPost from '@/components/SocialPost';
 import UserSearch from '@/components/UserSearch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Search, 
   Filter, 
@@ -170,24 +171,28 @@ const SocialFeed: React.FC = () => {
       {/* Header Section */}
       <section className="pt-24 pb-6 hero-gradient">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-5">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-6">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Travelgram</h1>
               <p className="mt-2 text-gray-600">Share and discover travel moments from the community.</p>
             </div>
 
             {/* Top bar: search + actions */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2 items-center mb-4">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search posts, locations, hashtags..."
-                  className="pl-10 pr-4 h-11"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-center mb-6">
+              <Card className="col-span-1">
+                <CardContent className="p-2">
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search posts, users, locations, hashtags..."
+                      className="pl-10 pr-4 h-11"
+                      value={searchTerm}
+                      onChange={handleSearch}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
               <Button 
                 variant="outline"
                 className="h-11"

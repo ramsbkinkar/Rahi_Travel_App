@@ -49,6 +49,63 @@ const SocialPost: React.FC<SocialPostProps> = ({
   const { likePost, getComments, addComment } = useSocial();
   const { user } = useAuth();
 
+  // Follow feature (local, lightweight)
+  const getFollowingSet = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('followingUserIds');
+      if (!raw) return new Set();
+      return new Set(JSON.parse(raw) as number[]);
+    } catch {
+      return new Set();
+    }
+  };
+  const getMap = (key: string): Record<string, number[]> => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as Record<string, number[]>) : {};
+    } catch {
+      return {};
+    }
+  };
+  const setMap = (key: string, map: Record<string, number[]>) => {
+    localStorage.setItem(key, JSON.stringify(map));
+  };
+  const [isFollowing, setIsFollowing] = useState<boolean>(() => getFollowingSet().has(user_id));
+  const toggleFollow = () => {
+    if (!user) return;
+    const set = getFollowingSet();
+    if (set.has(user_id)) {
+      set.delete(user_id);
+      setIsFollowing(false);
+    } else {
+      set.add(user_id);
+      setIsFollowing(true);
+    }
+    localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
+    // Maintain per-user maps for profile counts
+    const followersByUserId = getMap('followersByUserId');
+    const followingByUserId = getMap('followingByUserId');
+    const targetKey = String(user_id);
+    const meKey = String(user.id);
+    // followers[target] includes me
+    const followersArr = new Set<number>(followersByUserId[targetKey] || []);
+    // following[me] includes target
+    const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
+    if (isFollowing) {
+      followersArr.delete(user.id);
+      myFollowingArr.delete(user_id);
+    } else {
+      followersArr.add(user.id);
+      myFollowingArr.add(user_id);
+    }
+    followersByUserId[targetKey] = Array.from(followersArr);
+    followingByUserId[meKey] = Array.from(myFollowingArr);
+    setMap('followersByUserId', followersByUserId);
+    setMap('followingByUserId', followingByUserId);
+    window.dispatchEvent(new Event('following:changed'));
+    window.dispatchEvent(new Event('followers:changed'));
+  };
+
   // Check if current user has already liked this post
   useEffect(() => {
     const checkLikeStatus = async () => {
@@ -142,9 +199,22 @@ const SocialPost: React.FC<SocialPostProps> = ({
             {location && <div className="text-xs text-gray-500">{location}</div>}
           </div>
         </Link>
-        <button>
-          <MoreHorizontal size={20} className="text-gray-500" />
-        </button>
+        <div className="flex items-center gap-2">
+          {user && user.id !== user_id && (
+            <button
+              onClick={toggleFollow}
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                isFollowing ? 'bg-primary text-white border-primary' : 'bg-white text-primary border-primary'
+              }`}
+              title={isFollowing ? 'Unfollow' : 'Follow'}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
+          <button>
+            <MoreHorizontal size={20} className="text-gray-500" />
+          </button>
+        </div>
       </div>
       
       {/* Image */}

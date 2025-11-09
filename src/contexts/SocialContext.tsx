@@ -54,13 +54,23 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [totalPosts, setTotalPosts] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOption, setFilterOption] = useState<'latest' | 'popular' | 'following'>('latest');
+  const [followingVersion, setFollowingVersion] = useState(0);
+  const getFollowingSet = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('followingUserIds');
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw) as number[];
+      return new Set(arr);
+    } catch {
+      return new Set();
+    }
+  };
+
   
   const { isAuthenticated } = useAuth();
 
   // Function to fetch posts from the API
   const fetchPosts = async (pageNum = 1) => {
-    if (!isAuthenticated) return;
-    
     try {
       setLoading(true);
       setError(null);
@@ -215,7 +225,8 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         result.sort((a, b) => b.likes_count - a.likes_count);
         break;
       case 'following':
-        // For now, this doesn't do anything different since we don't have following functionality
+        const following = getFollowingSet();
+        result = result.filter(p => following.has(p.user_id));
         result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
     }
@@ -225,10 +236,16 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Fetch initial posts when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchPosts(1);
-    }
+    // Always fetch public feed; create/like/comment still require auth
+    fetchPosts(1);
   }, [isAuthenticated]);
+
+  // Re-filter when following set changes elsewhere
+  useEffect(() => {
+    const handler = () => setFollowingVersion(v => v + 1);
+    window.addEventListener('following:changed', handler as EventListener);
+    return () => window.removeEventListener('following:changed', handler as EventListener);
+  }, []);
 
   return (
     <SocialContext.Provider
