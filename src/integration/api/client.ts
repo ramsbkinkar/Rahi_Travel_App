@@ -1,7 +1,12 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
-import { API_BASE_URL } from '@/utils/apiBase';
 
-// Base URL driven by environment in production
+// Resolve API base URL:
+// 1) Use VITE_API_BASE_URL when set in Amplify
+// 2) Fallback to your HTTPS API if env is missing
+const envUrl = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+const API_BASE_URL =
+  (envUrl && envUrl.replace(/\/$/, '')) ||
+  'https://api.3.91.185.220.sslip.io/api';
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -12,6 +17,15 @@ const axiosInstance: AxiosInstance = axios.create({
     'Accept': 'application/json'
   }
 });
+// // Create axios instance with default config
+// const axiosInstance: AxiosInstance = axios.create({
+//   baseURL: API_BASE_URL,
+//   withCredentials: true,
+//   headers: {
+//     'Content-Type': 'application/json',
+//     'Accept': 'application/json'
+//   }
+// });
 
 // Add response interceptor to handle errors
 axiosInstance.interceptors.response.use(
