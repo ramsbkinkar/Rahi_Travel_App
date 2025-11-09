@@ -141,3 +141,13 @@ CREATE TABLE IF NOT EXISTS sos_events (
     FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Followers relationship table (user_id is being followed by follower_id)
+CREATE TABLE IF NOT EXISTS followers (
+    user_id INTEGER NOT NULL,
+    follower_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, follower_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -247,6 +247,27 @@ export const SocialProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => window.removeEventListener('following:changed', handler as EventListener);
   }, []);
 
+  // Seed local following set from server for consistent "Following" filter
+  useEffect(() => {
+    const seedFollowingFromServer = async () => {
+      try {
+        const uid = parseInt(localStorage.getItem('authToken') || '0');
+        if (!uid) return;
+        const resp = await apiClient.getFollowing(uid);
+        if (resp.status === 'success' && resp.data) {
+          const ids = resp.data.users.map(u => u.id);
+          localStorage.setItem('followingUserIds', JSON.stringify(ids));
+          window.dispatchEvent(new Event('following:changed'));
+        }
+      } catch {
+        // ignore; fallback to existing local state
+      }
+    };
+    if (isAuthenticated) {
+      seedFollowingFromServer();
+    }
+  }, [isAuthenticated]);
+
   return (
     <SocialContext.Provider
       value={{

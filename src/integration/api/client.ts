@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import { API_BASE_URL } from '@/utils/apiBase';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Base URL driven by environment in production
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -342,6 +343,29 @@ class ApiClient {
       console.error('Failed to upload avatar:', error);
       throw error;
     }
+  }
+
+  // Follow system
+  async followUser(targetUserId: number): Promise<{ status: string; data?: { action: 'followed'; followers_count: number; following_count: number } }> {
+    const follower_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.post(`/users/${targetUserId}/follow`, { follower_id });
+    return response.data;
+  }
+
+  async unfollowUser(targetUserId: number): Promise<{ status: string; data?: { action: 'unfollowed'; followers_count: number; following_count: number } }> {
+    const follower_id = parseInt(localStorage.getItem('authToken') || '0');
+    const response = await axiosInstance.delete(`/users/${targetUserId}/follow`, { data: { follower_id } });
+    return response.data;
+  }
+
+  async getFollowers(userId: number): Promise<{ status: string; data?: { count: number; users: Array<{ id: number; name: string; avatar_url?: string }> } }> {
+    const response = await axiosInstance.get(`/users/${userId}/followers`);
+    return response.data;
+  }
+
+  async getFollowing(userId: number): Promise<{ status: string; data?: { count: number; users: Array<{ id: number; name: string; avatar_url?: string }> } }> {
+    const response = await axiosInstance.get(`/users/${userId}/following`);
+    return response.data;
   }
 
   // Scrapbooks

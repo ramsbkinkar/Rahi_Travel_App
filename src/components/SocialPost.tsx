@@ -7,7 +7,9 @@ import { useSocial } from '@/contexts/SocialContext';
 import { formatDistanceToNow } from 'date-fns';
 import { Comment } from '@/integration/api/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/integration/api/client';
 import axios from 'axios';
+import { API_BASE_URL } from '@/utils/apiBase';
 
 interface SocialPostProps {
   id: number;
@@ -71,36 +73,44 @@ const SocialPost: React.FC<SocialPostProps> = ({
     localStorage.setItem(key, JSON.stringify(map));
   };
   const [isFollowing, setIsFollowing] = useState<boolean>(() => getFollowingSet().has(user_id));
-  const toggleFollow = () => {
+  const toggleFollow = async () => {
     if (!user) return;
-    const set = getFollowingSet();
-    const alreadyFollowing = set.has(user_id);
-    // Toggle set first
-    if (alreadyFollowing) set.delete(user_id); else set.add(user_id);
-    setIsFollowing(!alreadyFollowing);
-    localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
-    // Maintain per-user maps for profile counts
-    const followersByUserId = getMap('followersByUserId');
-    const followingByUserId = getMap('followingByUserId');
-    const targetKey = String(user_id);
-    const meKey = String(user.id);
-    // followers[target] includes me
-    const followersArr = new Set<number>(followersByUserId[targetKey] || []);
-    // following[me] includes target
-    const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
-    if (alreadyFollowing) {
-      followersArr.delete(user.id);
-      myFollowingArr.delete(user_id);
-    } else {
-      followersArr.add(user.id);
-      myFollowingArr.add(user_id);
+    const alreadyFollowing = isFollowing;
+    try {
+      if (alreadyFollowing) {
+        const resp = await apiClient.unfollowUser(user_id);
+        if (resp.status !== 'success') throw new Error('Unfollow failed');
+      } else {
+        const resp = await apiClient.followUser(user_id);
+        if (resp.status !== 'success') throw new Error('Follow failed');
+      }
+      // Local cache updates for counts and filters
+      const set = getFollowingSet();
+      if (alreadyFollowing) set.delete(user_id); else set.add(user_id);
+      setIsFollowing(!alreadyFollowing);
+      localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
+      const followersByUserId = getMap('followersByUserId');
+      const followingByUserId = getMap('followingByUserId');
+      const targetKey = String(user_id);
+      const meKey = String(user.id);
+      const followersArr = new Set<number>(followersByUserId[targetKey] || []);
+      const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
+      if (alreadyFollowing) {
+        followersArr.delete(user.id);
+        myFollowingArr.delete(user_id);
+      } else {
+        followersArr.add(user.id);
+        myFollowingArr.add(user_id);
+      }
+      followersByUserId[targetKey] = Array.from(followersArr);
+      followingByUserId[meKey] = Array.from(myFollowingArr);
+      setMap('followersByUserId', followersByUserId);
+      setMap('followingByUserId', followingByUserId);
+      window.dispatchEvent(new Event('following:changed'));
+      window.dispatchEvent(new Event('followers:changed'));
+    } catch (e) {
+      // No-op on error; keep previous UI state
     }
-    followersByUserId[targetKey] = Array.from(followersArr);
-    followingByUserId[meKey] = Array.from(myFollowingArr);
-    setMap('followersByUserId', followersByUserId);
-    setMap('followingByUserId', followingByUserId);
-    window.dispatchEvent(new Event('following:changed'));
-    window.dispatchEvent(new Event('followers:changed'));
   };
 
   // Check if current user has already liked this post
@@ -109,7 +119,7 @@ const SocialPost: React.FC<SocialPostProps> = ({
       if (!user) return;
       
       try {
-        const response = await axios.get(`http://localhost:3000/api/posts/${id}/liked`, {
+        const response = await axios.get(`${API_BASE_URL}/posts/${id}/liked`, {
           params: { user_id: user.id }
         });
         

@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSocial } from '@/contexts/SocialContext';
 import { useAuth } from '@/contexts/AuthContext';
 import './SocialFeed.css';
+import { withApiOrigin } from '@/utils/apiBase';
 
 const SocialFeed: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -395,7 +396,7 @@ const SocialFeed: React.FC = () => {
                   username={post.username}
                   user_id={post.user_id}
                   avatar={post.avatar_url || `https://i.pravatar.cc/150?u=${post.username}`}
-                  image={`http://localhost:3000${post.image_url}`}
+                  image={withApiOrigin(post.image_url) as string}
                   caption={post.caption || ''}
                   location={post.location || ''}
                   likes={post.likes_count}

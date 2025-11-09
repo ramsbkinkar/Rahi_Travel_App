@@ -13,6 +13,7 @@ import { themes } from '@/utils/themes';
 import Layout1 from '@/scrapbookTemplates/Layout1';
 import Layout2 from '@/scrapbookTemplates/Layout2';
 import { apiClient } from '@/integration/api/client';
+import { withApiOrigin } from '@/utils/apiBase';
 
 const ScrapbookView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,7 +48,7 @@ const ScrapbookView: React.FC = () => {
       const take = layout === 'two' ? 2 : 3;
       slides.push({
         layout,
-        images: data.images.slice(idx, idx + take).map((u: string) => u.startsWith('http') ? u : `http://localhost:3000${u}`),
+        images: data.images.slice(idx, idx + take).map((u: string) => (u.startsWith('http') ? u : (withApiOrigin(u) as string))),
         captions: (data.captions || []).slice(idx, idx + take),
       });
       idx += take;

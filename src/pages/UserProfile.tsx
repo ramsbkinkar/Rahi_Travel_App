@@ -38,6 +38,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatDistanceToNow } from 'date-fns';
 import { getScrapbookById } from '@/lib/scrapbookUtils';
 import { useToast } from '@/hooks/use-toast';
+import { withApiOrigin } from '@/utils/apiBase';
 
 const UserProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -92,7 +93,7 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  const recomputeFollowStats = () => {
+  const recomputeFollowStatsLocal = () => {
     const followersByUserId = getMap('followersByUserId');
     const followingByUserId = getMap('followingByUserId');
     const followers = followersByUserId[String(profileUserId)] || [];
@@ -107,32 +108,73 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  const toggleFollow = () => {
-    if (!currentUser || isOwnProfile) return;
-    const set = getFollowingSet();
-    const followersByUserId = getMap('followersByUserId');
-    const followingByUserId = getMap('followingByUserId');
-    const targetKey = String(profileUserId);
-    const meKey = String(currentUser.id);
-    const followersArr = new Set<number>(followersByUserId[targetKey] || []);
-    const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
-    if (set.has(profileUserId)) {
-      set.delete(profileUserId);
-      followersArr.delete(currentUser.id);
-      myFollowingArr.delete(profileUserId);
-    } else {
-      set.add(profileUserId);
-      followersArr.add(currentUser.id);
-      myFollowingArr.add(profileUserId);
+  const refreshFollowStatsFromServer = async () => {
+    try {
+      const [followersResp, followingResp] = await Promise.all([
+        apiClient.getFollowers(profileUserId),
+        apiClient.getFollowing(profileUserId)
+      ]);
+      if (followersResp.status === 'success' && followersResp.data) {
+        setFollowersCount(followersResp.data.count);
+        if (currentUser) {
+          const found = followersResp.data.users.some(u => u.id === currentUser.id);
+          setIsFollowing(found);
+        } else {
+          setIsFollowing(false);
+        }
+      }
+      if (followingResp.status === 'success' && followingResp.data) {
+        setFollowingCount(followingResp.data.count);
+      }
+    } catch {
+      // fallback to local computation
+      recomputeFollowStatsLocal();
     }
-    localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
-    followersByUserId[targetKey] = Array.from(followersArr);
-    followingByUserId[meKey] = Array.from(myFollowingArr);
-    setMap('followersByUserId', followersByUserId);
-    setMap('followingByUserId', followingByUserId);
-    window.dispatchEvent(new Event('following:changed'));
-    window.dispatchEvent(new Event('followers:changed'));
-    recomputeFollowStats();
+  };
+
+  const toggleFollow = async () => {
+    if (!currentUser || isOwnProfile) return;
+    try {
+      if (isFollowing) {
+        const resp = await apiClient.unfollowUser(profileUserId);
+        if (resp.status !== 'success') throw new Error('Unfollow failed');
+      } else {
+        const resp = await apiClient.followUser(profileUserId);
+        if (resp.status !== 'success') throw new Error('Follow failed');
+      }
+
+      // Update local caches for components that rely on localStorage
+      const set = getFollowingSet();
+      const followersByUserId = getMap('followersByUserId');
+      const followingByUserId = getMap('followingByUserId');
+      const targetKey = String(profileUserId);
+      const meKey = String(currentUser.id);
+      const followersArr = new Set<number>(followersByUserId[targetKey] || []);
+      const myFollowingArr = new Set<number>(followingByUserId[meKey] || []);
+
+      if (isFollowing) {
+        set.delete(profileUserId);
+        followersArr.delete(currentUser.id);
+        myFollowingArr.delete(profileUserId);
+      } else {
+        set.add(profileUserId);
+        followersArr.add(currentUser.id);
+        myFollowingArr.add(profileUserId);
+      }
+      localStorage.setItem('followingUserIds', JSON.stringify(Array.from(set)));
+      followersByUserId[targetKey] = Array.from(followersArr);
+      followingByUserId[meKey] = Array.from(myFollowingArr);
+      setMap('followersByUserId', followersByUserId);
+      setMap('followingByUserId', followingByUserId);
+      window.dispatchEvent(new Event('following:changed'));
+      window.dispatchEvent(new Event('followers:changed'));
+
+      // Refresh from server to ensure counts are accurate
+      await refreshFollowStatsFromServer();
+    } catch {
+      // Soft fallback to local recompute
+      recomputeFollowStatsLocal();
+    }
   };
   
   // Fetch user profile data
@@ -151,6 +193,8 @@ const UserProfile: React.FC = () => {
           setBio(response.data.user.bio || '');
           setHasMore(response.data.posts.length < response.data.postCount);
           setPage(1);
+          // Try to hydrate counts and following state from server
+          await refreshFollowStatsFromServer();
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load user profile');
@@ -260,8 +304,8 @@ const UserProfile: React.FC = () => {
 
   // Load followers/following counts
   useEffect(() => {
-    recomputeFollowStats();
-    const handler = () => recomputeFollowStats();
+    refreshFollowStatsFromServer();
+    const handler = () => recomputeFollowStatsLocal();
     window.addEventListener('following:changed', handler as EventListener);
     window.addEventListener('followers:changed', handler as EventListener);
     return () => {
@@ -463,7 +507,7 @@ const UserProfile: React.FC = () => {
                 <Avatar className="w-24 h-24 md:w-32 md:h-32">
                   <AvatarImage 
                     src={user.avatar_url 
-                      ? (user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:3000${user.avatar_url}`)
+                      ? (withApiOrigin(user.avatar_url))
                       : `https://i.pravatar.cc/150?u=${user.id}`
                     } 
                   />
@@ -573,7 +617,7 @@ const UserProfile: React.FC = () => {
                     className="bg-white rounded-lg shadow overflow-hidden text-left"
                     onClick={() => navigate(`/scrapbook/view/${sb.id}`)}
                   >
-                    <img src={sb.preview ? `http://localhost:3000${sb.preview}` : ''} alt={sb.title} className="w-full aspect-[4/3] object-cover" />
+                    <img src={sb.preview ? withApiOrigin(sb.preview) : ''} alt={sb.title} className="w-full aspect-[4/3] object-cover" />
                     <div className="p-3">
                       <div className="text-sm font-semibold truncate">{sb.title}</div>
                       <div className="text-xs text-gray-500">{new Date(sb.createdAt).toLocaleString()}</div>
@@ -626,7 +670,7 @@ const UserProfile: React.FC = () => {
                         onClick={() => handlePostClick(post)}
                       >
                         <img
-                          src={`http://localhost:3000${post.image_url}`}
+                          src={withApiOrigin(post.image_url) as string}
                           alt={post.caption || 'Post image'}
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
@@ -672,7 +716,7 @@ const UserProfile: React.FC = () => {
                           username={post.username}
                           user_id={post.user_id}
                           avatar={post.avatar_url || `https://i.pravatar.cc/150?u=${post.username}`}
-                          image={`http://localhost:3000${post.image_url}`}
+                          image={withApiOrigin(post.image_url) as string}
                           caption={post.caption || ''}
                           location={post.location || ''}
                           likes={post.likes_count}
@@ -752,7 +796,7 @@ const UserProfile: React.FC = () => {
               {/* Image */}
               <div className="relative aspect-square">
                 <img
-                  src={`http://localhost:3000${selectedPost.image_url}`}
+                  src={withApiOrigin(selectedPost.image_url) as string}
                   alt={selectedPost.caption || 'Post image'}
                   className="w-full h-full object-cover rounded-lg"
                 />

@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { apiClient } from '@/integration/api/client';
+import { withApiOrigin } from '@/utils/apiBase';
 
 const NavBar = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -50,7 +51,7 @@ const NavBar = () => {
         if (resp.status === 'success' && resp.data?.user) {
           const a = resp.data.user.avatar_url;
           if (a) {
-            setAvatarUrl(a.startsWith('http') ? a : `http://localhost:3000${a}`);
+            setAvatarUrl(withApiOrigin(a));
           } else {
             setAvatarUrl(undefined);
           }

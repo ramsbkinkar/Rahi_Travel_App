@@ -12,6 +12,10 @@ const updateProfileSchema = z.object({
   user_id: z.number()
 });
 
+const followSchema = z.object({
+  follower_id: z.number()
+});
+
 // Get user profile by ID
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -38,6 +42,19 @@ router.get('/:id', async (req: Request, res: Response) => {
       WHERE user_id = ?
     `, [userId]);
     
+    // Followers/following counts
+    const followersCountRow = await dbAsync.get(`
+      SELECT COUNT(*) as count
+      FROM followers
+      WHERE user_id = ?
+    `, [userId]);
+
+    const followingCountRow = await dbAsync.get(`
+      SELECT COUNT(*) as count
+      FROM followers
+      WHERE follower_id = ?
+    `, [userId]);
+
     // Get user's latest posts
     const posts = await dbAsync.all(`
       SELECT 
@@ -65,7 +82,9 @@ router.get('/:id', async (req: Request, res: Response) => {
       data: {
         user,
         postCount: postCount.count,
-        posts
+        posts,
+        followersCount: followersCountRow?.count ?? 0,
+        followingCount: followingCountRow?.count ?? 0
       }
     });
   } catch (error) {
@@ -157,6 +176,130 @@ router.put('/:id', async (req: Request, res: Response) => {
       status: 'error',
       message: 'Server error' 
     });
+  }
+});
+
+// Follow a user
+router.post('/:id/follow', async (req: Request, res: Response) => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    const { follower_id } = followSchema.parse(req.body);
+
+    if (targetUserId === follower_id) {
+      return res.status(400).json({ status: 'error', message: 'You cannot follow yourself' });
+    }
+
+    // Validate both users exist
+    const [targetUser, followerUser] = await Promise.all([
+      dbAsync.get('SELECT id FROM users WHERE id = ?', [targetUserId]),
+      dbAsync.get('SELECT id FROM users WHERE id = ?', [follower_id])
+    ]);
+    if (!targetUser || !followerUser) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
+    // Insert relation (ignore if exists)
+    await dbAsync.run(
+      `INSERT OR IGNORE INTO followers (user_id, follower_id) VALUES (?, ?)`,
+      [targetUserId, follower_id]
+    );
+
+    const followersCountRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE user_id = ?`, [targetUserId]);
+    const followingCountRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE follower_id = ?`, [follower_id]);
+
+    res.json({
+      status: 'success',
+      data: {
+        action: 'followed',
+        followers_count: followersCountRow?.count ?? 0,
+        following_count: followingCountRow?.count ?? 0
+      }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ status: 'error', message: 'Invalid input', errors: error.errors });
+    }
+    console.error('Error following user:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
+// Unfollow a user
+router.delete('/:id/follow', async (req: Request, res: Response) => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    const { follower_id } = followSchema.parse(req.body);
+
+    if (targetUserId === follower_id) {
+      return res.status(400).json({ status: 'error', message: 'You cannot unfollow yourself' });
+    }
+
+    await dbAsync.run(
+      `DELETE FROM followers WHERE user_id = ? AND follower_id = ?`,
+      [targetUserId, follower_id]
+    );
+
+    const followersCountRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE user_id = ?`, [targetUserId]);
+    const followingCountRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE follower_id = ?`, [follower_id]);
+
+    res.json({
+      status: 'success',
+      data: {
+        action: 'unfollowed',
+        followers_count: followersCountRow?.count ?? 0,
+        following_count: followingCountRow?.count ?? 0
+      }
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ status: 'error', message: 'Invalid input', errors: error.errors });
+    }
+    console.error('Error unfollowing user:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
+// List followers of a user
+router.get('/:id/followers', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const rows = await dbAsync.all(
+      `SELECT u.id, u.name, u.avatar_url
+       FROM followers f
+       JOIN users u ON u.id = f.follower_id
+       WHERE f.user_id = ?
+       ORDER BY f.created_at DESC`,
+      [userId]
+    );
+    const countRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE user_id = ?`, [userId]);
+
+    res.json({ status: 'success', data: { count: countRow?.count ?? 0, users: rows } });
+  } catch (error) {
+    console.error('Error listing followers:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
+// List users this user is following
+router.get('/:id/following', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const rows = await dbAsync.all(
+      `SELECT u.id, u.name, u.avatar_url
+       FROM followers f
+       JOIN users u ON u.id = f.user_id
+       WHERE f.follower_id = ?
+       ORDER BY f.created_at DESC`,
+      [userId]
+    );
+    const countRow = await dbAsync.get(`SELECT COUNT(*) as count FROM followers WHERE follower_id = ?`, [userId]);
+
+    res.json({ status: 'success', data: { count: countRow?.count ?? 0, users: rows } });
+  } catch (error) {
+    console.error('Error listing following:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
   }
 });
 
