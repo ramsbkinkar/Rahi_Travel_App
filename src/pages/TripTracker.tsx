@@ -20,13 +20,32 @@ type MemberPoint = {
 
 const TripTracker: React.FC = () => {
   const { toast } = useToast();
+  const currentUserId = useRef<number>(parseInt(localStorage.getItem('authToken') || '0'));
   const [tripId, setTripId] = useState<number | null>(null);
   const [invite, setInvite] = useState<string>('');
   const [joinTripId, setJoinTripId] = useState<string>('');
   const [joinToken, setJoinToken] = useState<string>('');
   const [points, setPoints] = useState<MemberPoint[]>([]);
   const [lastFetch, setLastFetch] = useState<string | undefined>(undefined);
+  const [lastSosFetch, setLastSosFetch] = useState<string | undefined>(undefined);
+  const [sosUsers, setSosUsers] = useState<Map<number, number>>(new Map()); // user_id -> expiry ts
+  const [blink, setBlink] = useState<boolean>(false);
   const watchIdRef = useRef<number | null>(null);
+
+  // Stable color per user
+  const colorForUser = (userId: number) => {
+    const palette = ['#2563eb','#16a34a','#ea580c','#a855f7','#0891b2','#d946ef','#059669','#f97316','#64748b','#22c55e'];
+    return palette[userId % palette.length];
+  };
+
+  // Blink ticker when any SOS is active
+  useEffect(() => {
+    const now = Date.now();
+    const hasActive = Array.from(sosUsers.values()).some(exp => exp > now);
+    if (!hasActive) return;
+    const id = setInterval(() => setBlink(b => !b), 700);
+    return () => clearInterval(id);
+  }, [sosUsers]);
 
   useEffect(() => {
     if (!tripId) return;
@@ -64,6 +83,40 @@ const TripTracker: React.FC = () => {
       clearInterval(id);
     };
   }, [tripId, lastFetch]);
+
+  // Poll SOS events; keep user blinking red for 10 minutes
+  useEffect(() => {
+    if (!tripId) return;
+    let active = true;
+    const tick = async () => {
+      try {
+        const resp = await apiClient.getSOS(tripId, lastSosFetch);
+        if (resp.status === 'success') {
+          const nowIso = new Date().toISOString();
+          const events: Array<{ user_id: number; created_at: string }> = resp.data || [];
+          if (events.length > 0 && active) {
+            setSosUsers(prev => {
+              const next = new Map(prev);
+              const ttl = 10 * 60 * 1000; // 10 minutes
+              const now = Date.now();
+              events.forEach(e => {
+                next.set(e.user_id, now + ttl);
+              });
+              // cleanup expired
+              for (const [uid, exp] of next) {
+                if (exp < now) next.delete(uid);
+              }
+              return next;
+            });
+          }
+          if (active) setLastSosFetch(nowIso);
+        }
+      } catch {}
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { active = false; clearInterval(id); };
+  }, [tripId, lastSosFetch]);
 
   const startSharing = () => {
     if (!tripId) {
@@ -143,9 +196,20 @@ const TripTracker: React.FC = () => {
     try {
       navigator.geolocation.getCurrentPosition(async (pos) => {
         await apiClient.triggerSOS(tripId, { lat: pos.coords.latitude, lng: pos.coords.longitude });
+        // Immediately mark local user as SOS so UI reflects without waiting for poll
+        setSosUsers(prev => {
+          const next = new Map(prev);
+          next.set(currentUserId.current, Date.now() + 10 * 60 * 1000);
+          return next;
+        });
         toast({ title: 'SOS sent', variant: 'destructive' });
       }, async () => {
         await apiClient.triggerSOS(tripId, { lat: 0, lng: 0 });
+        setSosUsers(prev => {
+          const next = new Map(prev);
+          next.set(currentUserId.current, Date.now() + 10 * 60 * 1000);
+          return next;
+        });
         toast({ title: 'SOS sent', variant: 'destructive' });
       });
     } catch {
@@ -222,12 +286,18 @@ const TripTracker: React.FC = () => {
                   />
                   {points.map((p, idx) => {
                     const lastMin = Math.max(0, Math.floor((Date.now() - p.ts) / 60000));
-                    const color = lastMin < 1 ? '#0ea5e9' : lastMin < 5 ? '#f59e0b' : '#ef4444';
+                    const baseColor = colorForUser(p.user_id);
+                    const isSOS = (sosUsers.get(p.user_id) || 0) > Date.now();
+                    const color = isSOS ? '#ef4444' : baseColor;
+                    const fillOpacity = isSOS ? (blink ? 0.35 : 0.9) : 0.8;
+                    const radius = isSOS ? (blink ? 12 : 9) : 8;
                     return (
-                      <CircleMarker key={idx} center={[p.lat, p.lng]} radius={8} pathOptions={{ color, fillColor: color, fillOpacity: 0.8 }}>
+                      <CircleMarker key={idx} center={[p.lat, p.lng]} radius={radius} pathOptions={{ color, fillColor: color, fillOpacity }}>
                         <Popup>
                           <div className="text-sm">
-                            <div className="font-semibold flex items-center"><MapPin className="w-4 h-4 mr-1" /> User #{p.user_id}</div>
+                            <div className="font-semibold flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" /> User #{p.user_id} {isSOS && <Badge variant="destructive" className="ml-2">SOS</Badge>}
+                            </div>
                             <div className="text-gray-600">{lastMin < 1 ? 'online' : `last seen ${lastMin}m`}</div>
                           </div>
                         </Popup>

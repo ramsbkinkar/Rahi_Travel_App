@@ -391,6 +391,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getSOS(tripId: number, since?: string): Promise<any> {
+    const response = await axiosInstance.get(`/trips/${tripId}/sos`, { params: { since } });
+    return response.data;
+  }
+
   // Musafir chatbot
   async musafirChat(messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>): Promise<{ status: string; data?: { text: string } }> {
     const response = await axiosInstance.post('/musafir/chat', { messages });

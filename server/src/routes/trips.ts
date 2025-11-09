@@ -127,6 +127,21 @@ router.post('/:id/sos', async (req: Request, res: Response) => {
   }
 });
 
+// Recent SOS events
+router.get('/:id/sos', async (req: Request, res: Response) => {
+  try {
+    const tripId = parseInt(req.params.id);
+    const since = req.query.since ? new Date(req.query.since as string) : null;
+    const rows = since
+      ? await dbAsync.all(`SELECT * FROM sos_events WHERE trip_id = ? AND created_at >= ? ORDER BY created_at ASC`, [tripId, since.toISOString()])
+      : await dbAsync.all(`SELECT * FROM sos_events WHERE trip_id = ? AND created_at >= datetime('now', '-1 hour') ORDER BY created_at ASC`, [tripId]);
+    res.json({ status: 'success', data: rows });
+  } catch (e) {
+    console.error('Get sos error:', e);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
 export default router;
 
 
