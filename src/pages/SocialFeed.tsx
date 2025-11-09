@@ -205,7 +205,7 @@ const SocialFeed: React.FC = () => {
                       <Upload size={16} className="mr-2" /> New Post
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-[550px]">
+                <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-center text-2xl font-bold">
                       Share Your Travel Memory
@@ -311,7 +311,7 @@ const SocialFeed: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end mt-4">
+                  <div className="sticky bottom-0 bg-white pt-3 pb-3 mt-4 border-t flex justify-end">
                     <Button 
                       variant="default"
                       onClick={handlePostUpload}
