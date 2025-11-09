@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useSocial } from '@/contexts/SocialContext';
 import { useAuth } from '@/contexts/AuthContext';
+import './SocialFeed.css';
 
 const SocialFeed: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,39 +164,36 @@ const SocialFeed: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50/40 via-white to-white bg-dots">
       <NavBar />
       
       {/* Header Section */}
-      <section className="pt-28 pb-8">
+      <section className="pt-24 pb-6 hero-gradient">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-3xl font-bold">Travelgram</h1>
+          <div className="text-center mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Travelgram</h1>
+            <p className="mt-2 text-gray-600">Share and discover travel moments from the community.</p>
+          </div>
+          
+          <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3">
+            <div className="relative w-full max-w-2xl">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search posts, locations, hashtags..."
+                className="pl-10 pr-4"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex w-full">
-                <div className="relative flex-grow">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Search posts, locations, hashtags..."
-                    className="pl-10 pr-4"
-                    value={searchTerm}
-                    onChange={handleSearch}
-                  />
-                </div>
-                <Button 
-                  variant="ghost"
-                  className="ml-2"
-                  onClick={() => setIsSearchModalOpen(true)}
-                >
-                  <Users size={16} className="mr-2" />
-                  Find Users
-                </Button>
-              </div>
-              
+            <div className="flex gap-2 justify-center">
+              <Button 
+                variant="ghost"
+                onClick={() => setIsSearchModalOpen(true)}
+              >
+                <Users size={16} className="mr-2" />
+                Find Users
+              </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="default">
@@ -334,28 +332,28 @@ const SocialFeed: React.FC = () => {
       {/* Feed Section */}
       <section className="pb-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-xl md:max-w-2xl mx-auto">
             {/* Filter Bar */}
-            <div className="bg-white p-4 mb-6 rounded-lg shadow-sm flex items-center justify-between">
-              <div className="flex items-center">
+            <div className="bg-white p-3 md:p-4 mb-6 rounded-full shadow-sm flex items-center justify-between">
+              <div className="hidden md:flex items-center">
                 <Filter size={16} className="text-gray-500 mr-2" />
-                <span className="text-gray-700 font-medium">Filter by:</span>
+                <span className="text-gray-700 font-medium">Filter</span>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex gap-2 w-full md:w-auto justify-center">
                 <button 
-                  className={`font-medium ${filterOption === 'latest' ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${filterOption === 'latest' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => handleFilterClick('latest')}
                 >
                   Latest
                 </button>
                 <button 
-                  className={`font-medium ${filterOption === 'popular' ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${filterOption === 'popular' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => handleFilterClick('popular')}
                 >
                   Popular
                 </button>
                 <button 
-                  className={`font-medium ${filterOption === 'following' ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${filterOption === 'following' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   onClick={() => handleFilterClick('following')}
                 >
                   Following

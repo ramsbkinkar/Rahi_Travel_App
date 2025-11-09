@@ -390,6 +390,12 @@ class ApiClient {
     const response = await axiosInstance.post(`/trips/${tripId}/sos`, { user_id, ...payload });
     return response.data;
   }
+
+  // Musafir chatbot
+  async musafirChat(messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>): Promise<{ status: string; data?: { text: string } }> {
+    const response = await axiosInstance.post('/musafir/chat', { messages });
+    return response.data;
+  }
 }
 
 // Export a singleton instance

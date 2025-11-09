@@ -219,4 +219,21 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-raahi-blue to-raahi-orange;
   }
+
+  /* Global subtle dotted background with soft top gradient */
+  .bg-dots {
+    background-image: radial-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  .hero-gradient {
+    background-image: radial-gradient(ellipse at top, rgba(56, 189, 248, 0.18), transparent 60%);
+  }
+  .global-page-bg {
+    background-image:
+      radial-gradient(rgba(2, 132, 199, 0.06) 1px, transparent 1px),
+      radial-gradient(ellipse at top, rgba(56, 189, 248, 0.18), transparent 60%);
+    background-size: 16px 16px, auto;
+    background-repeat: repeat, no-repeat;
+    background-position: top left, top center;
+  }
 }

@@ -7,6 +7,7 @@ import uploadRoutes from './routes/uploads';
 import userRoutes from './routes/users';
 import scrapbookRoutes from './routes/scrapbooks';
 import tripRoutes from './routes/trips';
+import musafirRoutes from './routes/musafir';
 import initializeDatabase from './db/init';
 import { createTestUsers } from './db/create-user';
 import path from 'path';
@@ -23,6 +24,7 @@ const allowedOrigins = [
   'http://localhost:8000',
   'http://localhost:8080',
   'http://localhost:3000',
+  'http://localhost:5173',
   'http://192.168.31.185:8000',
   'http://192.168.31.185:8080'
 ];
@@ -67,6 +69,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/scrapbooks', scrapbookRoutes);
 app.use('/api/trips', tripRoutes);
+app.use('/api/musafir', musafirRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

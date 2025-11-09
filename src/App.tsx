@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import ScrapbookView from "./pages/ScrapbookView";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import MusafirWidget from "./components/MusafirWidget";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,44 +42,47 @@ const App = () => {
               <Toaster />
               <Sonner />
               <Suspense fallback={<LoadingScreen />}>
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/travel-packages" element={<TravelPackages />} />
-                    <Route path="/travel-packages/:id" element={<PackageDetails />} />
-                    <Route path="/profile/:id" element={<UserProfile />} />
-                    <Route path="/explore-india" element={<ExploreIndia />} />
-                    <Route path="/explore-india/:citySlug" element={<CityDetails />} />
-                    <Route 
-                      path="/scrapbook" 
-                      element={
-                        <ProtectedRoute>
-                          <Scrapbook />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route path="/social-feed" element={<SocialFeed />} />
-                    <Route 
-                      path="/trip-tracker" 
-                      element={
-                        <ProtectedRoute>
-                          <TripTracker />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="/scrapbook/view/:id" 
-                      element={
-                        <ProtectedRoute>
-                          <ScrapbookView />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
+                <div className="min-h-screen global-page-bg">
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/travel-packages" element={<TravelPackages />} />
+                      <Route path="/travel-packages/:id" element={<PackageDetails />} />
+                      <Route path="/profile/:id" element={<UserProfile />} />
+                      <Route path="/explore-india" element={<ExploreIndia />} />
+                      <Route path="/explore-india/:citySlug" element={<CityDetails />} />
+                      <Route 
+                        path="/scrapbook" 
+                        element={
+                          <ProtectedRoute>
+                            <Scrapbook />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route path="/social-feed" element={<SocialFeed />} />
+                      <Route 
+                        path="/trip-tracker" 
+                        element={
+                          <ProtectedRoute>
+                            <TripTracker />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/scrapbook/view/:id" 
+                        element={
+                          <ProtectedRoute>
+                            <ScrapbookView />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </BrowserRouter>
+                </div>
               </Suspense>
+              <MusafirWidget />
             </TooltipProvider>
           </SocialProvider>
         </AuthProvider>
