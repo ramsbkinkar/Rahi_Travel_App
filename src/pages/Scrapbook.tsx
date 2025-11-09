@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { themes, type ThemeKey, getRandomStickers, type RandomSticker } from '@/utils/themes';
+import { themes, type ThemeKey, getRandomStickers, type RandomSticker, type DecorIntensity } from '@/utils/themes';
 import Layout1 from '@/scrapbookTemplates/Layout1';
 import Layout2 from '@/scrapbookTemplates/Layout2';
+import Layout3 from '@/scrapbookTemplates/Layout3';
+import Layout4 from '@/scrapbookTemplates/Layout4';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCreative, Pagination, Navigation } from 'swiper/modules';
 import html2canvas from 'html2canvas';
@@ -18,15 +20,15 @@ import 'swiper/css/effect-creative';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import './Scrapbook.css';
+import './ScrapbookBackgrounds.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveScrapbookForUser } from '@/lib/scrapbookUtils';
 import { useEffect } from 'react';
 import { apiClient } from '@/integration/api/client';
 
 type SlideSpec = {
-  layout: 'two' | 'three';
+  layout: number; // number of images expected on this page
   images: string[];
-  captions: string[];
   stickers: RandomSticker[];
 };
 
@@ -40,6 +42,7 @@ const Scrapbook: React.FC = () => {
   const [captions, setCaptions] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(true);
   const [pageStickers, setPageStickers] = useState<Record<number, RandomSticker[]>>({});
+  const [decorIntensity, setDecorIntensity] = useState<DecorIntensity>('decorative');
   const containerRef = useRef<HTMLDivElement>(null);
   const draftKey = user ? `scrapbook_draft_${user.id}` : null;
 
@@ -47,18 +50,17 @@ const Scrapbook: React.FC = () => {
     const result: SlideSpec[] = [];
     let idx = 0;
     let pageIndex = 0;
+    const cycle = [2, 3, 4, 3]; // L1, L2, L3, L4
     while (idx < images.length) {
-      const layout: 'two' | 'three' = pageIndex % 2 === 0 ? 'two' : 'three';
-      const take = layout === 'two' ? 2 : 3;
+      const take = cycle[pageIndex % cycle.length];
       const imgs = images.slice(idx, idx + take);
-      const caps = captions.slice(idx, idx + take);
       const stickers = pageStickers[pageIndex] || [];
-      result.push({ layout, images: imgs, captions: caps, stickers });
+      result.push({ layout: take, images: imgs, stickers });
       idx += take;
       pageIndex += 1;
     }
     return result;
-  }, [images, captions, pageStickers]);
+  }, [images, pageStickers]);
 
   const compressDataUrl = (dataUrl: string, maxDim = 1400, quality = 0.8): Promise<string> => {
     return new Promise((resolve) => {
@@ -175,9 +177,11 @@ const Scrapbook: React.FC = () => {
     let pageIndex = 0;
     let idx = 0;
     while (idx < images.length) {
-      const layoutIsTwo = pageIndex % 2 === 0;
-      const take = layoutIsTwo ? 2 : 3;
-      stickersByPage[pageIndex] = getRandomStickers(selectedTheme, layoutIsTwo ? 2 : 3);
+      const mod = pageIndex % 4;
+      const take = mod === 0 ? 2 : mod === 1 ? 3 : mod === 2 ? 4 : 3;
+      const imgs = images.slice(idx, idx + take);
+      const base = getRandomStickers(selectedTheme, Math.min(3, imgs.length), decorIntensity);
+      stickersByPage[pageIndex] = base;
       idx += take;
       pageIndex += 1;
     }
@@ -341,11 +345,32 @@ const Scrapbook: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Decoration intensity */}
+                <div className="space-y-2">
+                  <Label className="font-medium">Background Style</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['minimal','decorative','bold'] as DecorIntensity[]).map(mode => (
+                      <Button
+                        key={mode}
+                        variant={decorIntensity === mode ? 'default' : 'outline'}
+                        onClick={() => setDecorIntensity(mode)}
+                      >
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex gap-3">
                   {isEditing ? (
-                    <Button onClick={createScrapbook} className="w-full">
-                      Create Scrapbook
-                    </Button>
+                    <>
+                      <Button onClick={createScrapbook} className="w-full">
+                        Create Scrapbook
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={saveToProfile} disabled={images.length === 0}>
+                        Save to Profile
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button variant="outline" className="w-full" onClick={reEdit}>
@@ -365,89 +390,72 @@ const Scrapbook: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Captions */}
+            {/* Live Preview (always visible on the right) */}
             <Card className="lg:col-span-2">
-              <CardContent className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {images.map((img, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <img src={img} alt={`img-${i}`} className="w-24 h-24 object-cover rounded-md border" />
-                      <div className="flex-1">
-                        <Label className="text-sm">Caption</Label>
-                        <Input
-                          value={captions[i] || ''}
-                          placeholder="Write a caption..."
-                          onChange={(e) => updateCaption(i, e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {images.length === 0 && (
-                  <div className="text-gray-500 text-sm">No images yet. Upload to begin.</div>
+              <CardContent className="p-4">
+                {slides.length > 0 ? (
+                  <div ref={containerRef} className="w-full">
+                    <Swiper
+                      effect="creative"
+                      creativeEffect={{
+                        prev: { shadow: true, translate: ['-120%', 0, -500], rotate: [0, 0, -90] },
+                        next: { shadow: true, translate: ['120%', 0, -500], rotate: [0, 0, 90] },
+                      }}
+                      grabCursor
+                      modules={[EffectCreative, Pagination, Navigation]}
+                      className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-lg"
+                      pagination={{ clickable: true }}
+                      navigation
+                    >
+                      {/* Cover */}
+                      <SwiperSlide className="bg-white rounded-lg shadow-xl">
+                        <div
+                          className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
+                        >
+                          <h2 className={`text-4xl ${themes[selectedTheme].textColor} font-display italic`}>
+                            {title || 'My Travel Memories'}
+                          </h2>
+                        </div>
+                      </SwiperSlide>
+
+                      {/* Pages */}
+                      {slides.map((slide, pageIndex) => {
+                        const mod = pageIndex % 4;
+                        const Layout = mod === 0 ? Layout1 : mod === 1 ? Layout2 : mod === 2 ? Layout3 : Layout4;
+                        return (
+                          <SwiperSlide key={pageIndex} className="bg-white rounded-lg shadow-xl">
+                            <Layout
+                              image1={slide.images[0]}
+                              image2={slide.images[1]}
+                              // @ts-expect-error layouts accept optional image3/image4
+                              image3={slide.images[2]}
+                              // @ts-expect-error layout3 accepts image4
+                              image4={slide.images[3]}
+                              theme={selectedTheme}
+                              stickers={[...slide.stickers]}
+                            />
+                          </SwiperSlide>
+                        );
+                      })}
+
+                      {/* End slide */}
+                      <SwiperSlide className="bg-white rounded-lg shadow-xl">
+                        <div
+                          className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
+                        >
+                          <h2 className={`text-3xl ${themes[selectedTheme].textColor} font-display italic`}>The End</h2>
+                        </div>
+                      </SwiperSlide>
+                    </Swiper>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-[4/3] rounded-xl bg-white grid place-items-center text-gray-400">
+                    Add photos and click “Create Scrapbook” to see the preview.
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
-
-          {/* Preview */}
-          {!isEditing && slides.length > 0 && (
-            <div ref={containerRef} className="w-full max-w-3xl md:max-w-4xl mx-auto">
-              <Swiper
-                effect="creative"
-                creativeEffect={{
-                  prev: { shadow: true, translate: ['-120%', 0, -500], rotate: [0, 0, -90] },
-                  next: { shadow: true, translate: ['120%', 0, -500], rotate: [0, 0, 90] },
-                }}
-                grabCursor
-                modules={[EffectCreative, Pagination, Navigation]}
-                className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-lg"
-                pagination={{ clickable: true }}
-                navigation
-              >
-                {/* Cover */}
-                <SwiperSlide className="bg-white rounded-lg shadow-xl">
-                  <div
-                    className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
-                  >
-                    <h2 className={`text-4xl ${themes[selectedTheme].textColor} font-display italic`}>
-                      {title || 'My Travel Memories'}
-                    </h2>
-                  </div>
-                </SwiperSlide>
-
-                {/* Pages */}
-                {slides.map((slide, pageIndex) => {
-                  const isTwo = slide.layout === 'two';
-                  const Layout = isTwo ? Layout1 : Layout2;
-                  return (
-                    <SwiperSlide key={pageIndex} className="bg-white rounded-lg shadow-xl">
-                      <Layout
-                        image1={slide.images[0]}
-                        image2={slide.images[1]}
-                        // @ts-expect-error Layout2 accepts image3 optionally
-                        image3={isTwo ? undefined : slide.images[2]}
-                        caption1={slide.captions[0]}
-                        // @ts-expect-error Layout1 accepts caption2 optionally
-                        caption2={isTwo ? slide.captions[1] : undefined}
-                        theme={selectedTheme}
-                        stickers={slide.stickers}
-                      />
-                    </SwiperSlide>
-                  );
-                })}
-
-                {/* End slide */}
-                <SwiperSlide className="bg-white rounded-lg shadow-xl">
-                  <div
-                    className={`w-full h-full flex items-center justify-center ${themes[selectedTheme].bgColor} ${themes[selectedTheme].pattern}`}
-                  >
-                    <h2 className={`text-3xl ${themes[selectedTheme].textColor} font-display italic`}>The End</h2>
-                  </div>
-                </SwiperSlide>
-              </Swiper>
-            </div>
-          )}
         </div>
       </section>
       <Footer />

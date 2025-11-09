@@ -6,16 +6,16 @@ interface Layout2Props {
   image1?: string;
   image2?: string;
   image3?: string;
-  caption1?: string;
   theme: ThemeKey;
   stickers?: RandomSticker[];
 }
 
-const Layout2: React.FC<Layout2Props> = ({ image1, image2, image3, caption1, theme, stickers = [] }) => {
+const Layout2: React.FC<Layout2Props> = ({ image1, image2, image3, theme, stickers = [] }) => {
   const t = themes[theme];
 
   return (
-    <div className={`relative w-full h-full ${t?.bgColor} ${t?.pattern} p-6 md:p-8 pb-10`}>
+    <div className={`relative w-full h-full scrapbook-surface ${t?.bgColor} ${t?.pattern} ${t?.backgroundClass} ${t?.borderClass} p-6 md:p-8 pb-10`}>
+      <div className="pointer-events-none absolute inset-0 scrapbook-center-glow" />
       {/* Creative mosaic: large left, two stacked on right */}
       <div className="grid grid-cols-3 gap-4 md:gap-6 h-full">
         <div className="col-span-2">
@@ -51,23 +51,22 @@ const Layout2: React.FC<Layout2Props> = ({ image1, image2, image3, caption1, the
         </div>
       </div>
 
-      <div className="mt-3">
-        <div className="bg-white rounded-lg shadow px-4 py-2 inline-block">
-          <div className={`text-sm ${t?.textColor} italic`}>{caption1 || 'Add your caption here...'}</div>
-        </div>
-      </div>
-
-      {stickers.map((sticker, i) => (
-        <img
-          key={i}
-          src={sticker.src}
-          alt=""
-          style={sticker.style}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      ))}
+      {stickers.map((sticker, i) => {
+        if (sticker.type === 'text') {
+          return <span key={i} style={sticker.style as React.CSSProperties}>{sticker.text}</span>;
+        }
+        return (
+          <img
+            key={i}
+            src={sticker.src}
+            alt=""
+            style={sticker.style}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        );
+      })}
     </div>
   );
 };
