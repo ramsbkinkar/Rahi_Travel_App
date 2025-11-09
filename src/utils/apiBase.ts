@@ -6,7 +6,8 @@ export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 export const withApiOrigin = (maybePath: string | undefined | null): string | undefined => {
   if (!maybePath) return undefined;
   if (maybePath.startsWith('http')) return maybePath;
-  return `${API_ORIGIN}${maybePath}`;
+  const path = maybePath.startsWith('/') ? maybePath : `/${maybePath}`;
+  return `${API_ORIGIN}${path}`;
 };
 
 
