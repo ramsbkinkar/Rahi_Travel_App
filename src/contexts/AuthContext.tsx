@@ -29,16 +29,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for auth token in localStorage
-    const token = localStorage.getItem('authToken');
+ useEffect(() => {
+  // Check for auth token in localStorage
+  const token = localStorage.getItem('authToken');
+  const hydrate = async () => {
     if (!token) {
       setLoading(false);
       return;
     }
-    // TODO: Implement token verification with backend
-    setLoading(false);
-  }, []);
+    const userId = parseInt(token || '0');
+    if (!userId) {
+      localStorage.removeItem('authToken');
+      setLoading(false);
+      return;
+    }
+    try {
+      const resp = await apiClient.getUserProfile(userId);
+      if (resp.status === 'success' && resp.data?.user) {
+        setUser(resp.data.user as any);
+      } else {
+        localStorage.removeItem('authToken');
+      }
+    } catch {
+      localStorage.removeItem('authToken');
+    } finally {
+      setLoading(false);
+    }
+  };
+  hydrate();
+}, []);
 
   const login = async (email: string, password: string) => {
     const response = await apiClient.login(email, password);
