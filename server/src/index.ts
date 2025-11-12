@@ -55,6 +55,7 @@ const corsOptions = process.env.NODE_ENV === 'production'
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' })); // Increase payload limit for image uploads
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // add this
 
 // Enable pre-flight requests for all routes
 app.options('*', cors());
