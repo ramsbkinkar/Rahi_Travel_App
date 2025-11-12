@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -46,6 +48,9 @@ export const saveBase64Image = (base64Data: string, folder = 'posts'): string =>
     if (buffer.length === 0) {
       throw new Error('Empty image data');
     }
+    if (buffer.length > MAX_IMAGE_SIZE_BYTES) {
+    throw new Error('Image exceeds 10 MB limit');
+  }
     
     // Save file
     const filePath = path.join(targetDir, filename);
